@@ -48,6 +48,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.bornfire.brf.entities.AccessAndRoles;
 import com.bornfire.brf.entities.AccessandRolesRepository;
+import com.bornfire.brf.entities.CBUAE_BRF1_1_DETAIL_ENTITY;
+import com.bornfire.brf.entities.CBUAE_BRF1_1_DETAIL_Repo;
 import com.bornfire.brf.entities.RRReport;
 import com.bornfire.brf.entities.RT_BankNameMaster;
 import com.bornfire.brf.entities.RT_BankNameMasterRepository;
@@ -78,6 +80,9 @@ public class NavigationController {
 	 */
 
 	UserProfileRep UserProfileReps;
+	
+	@Autowired
+	CBUAE_BRF1_1_DETAIL_Repo BRF1_1_DETAIL_Repo;
 	
 	@Autowired
 	CBUAE_BRFValidationsRepo cbuae_brfvalidationsRepo;
@@ -256,7 +261,7 @@ public class NavigationController {
 
 		}
 
-		return "BRF/CBUAE_BRF1_1";
+		return "Userprofile";
 	}
 
 	@GetMapping("/getRoleDetails")
@@ -452,5 +457,7 @@ public class NavigationController {
 		// md.addAttribute("rpt_date", todate);
 		return "BRFValidations";
 	}
-
+	
+	
+	
 }
