@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+	  xmlns:th="http://www.thymeleaf.org">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<!-- CSS -->
+	<link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">
+	<link rel="stylesheet" type="text/css" th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}">
+	<link rel="stylesheet" type="text/css" th:href="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.css}">
+	<link rel="stylesheet" type="text/css" th:href="@{/webjars/datatables/1.10.19/css/jquery.dataTables.min.css}">
+	<link rel="stylesheet" th:href="@{/css/CustomButton.css}" />
+	<link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon" />
+
+	<!-- jQuery (required first) -->
+	<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+
+	<!-- ✅ jQuery Validation -->
+	<script src="/webjars/jquery-validation/1.19.0/jquery.validate.min.js"
+	th:src="@{/webjars/jquery-validation/1.19.0/jquery.validate.min.js}"></script>
+	
+	<!-- Bootstrap + Others -->
+	<script th:src="@{/webjars/popper.js/1.14.7/umd/popper.min.js}"></script>
+	<script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+	<script th:src="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.js}"></script>
+	<script th:src="@{/webjars/jquery-form/4.2.2/jquery.form.min.js}"></script>
+	<script th:src="@{/webjars/datatables/1.10.19/js/jquery.dataTables.min.js}"></script>
+	<script th:src="@{/webjars/datatables/1.10.19/js/dataTables.bootstrap4.min.js}"></script>
+
+
+<title>demo</title>
+
+<style>
+/* Your existing CSS - this is the correct approach */
+.scrollable-table-container {
+    /* This is the key: it creates the scroll context */
+    max-height: 540px; /* Or a suitable height like 80vh for responsive design */
+    overflow-y: auto;
+    border: 1px solid #ccc;
+}
+
+/* Your existing sticky header CSS, targeting the tr elements within the thead */
+.scrollable-table-container thead tr:nth-child(1) {
+    position: sticky;
+    top: 0;
+    background-color: #b3b6b9;
+    z-index: 4;
+}
+
+.scrollable-table-container thead tr:nth-child(2) {
+    position: sticky;
+    top: 36px; /* adjust based on row height */
+    background-color: #b3b6b9;
+    z-index: 3;
+}
+
+
+
+.scrollable-table-container thead tr:nth-child(3) {
+    position: sticky;
+    top: 72px; /* Adjust based on row height */
+    background-color: #b3b6b9;
+    z-index: 2;
+}
+
+.scrollable-table-container thead tr:nth-child(4) {
+    position: sticky;
+    top: 108px; /* Adjust based on row height */
+    background-color: #b3b6b9;
+    z-index: 1;
+}
+
+.scrollable-table-container thead tr:nth-child(5) {
+    position: sticky;
+    top: 144px; /* adjust based on row height (here: 36px * 4) */
+    background-color: #b3b6b9;
+    z-index: 0;
+}
+
+
+</style>
+<script th:inline="javascript">
+	
+
+	function home() {
+        $("#loader").modal("toggle");
+		location.href = 'Dashboard'
+	}
+
+	function back() {
+        $("#loader").modal("toggle");
+
+		window.history.back();
+	}
+	
+	function addop(){
+		alert("alertwindow")
+		if ($("#STD_Demo_Entity").valid()) {
+
+			$.ajax({
+				url : './add',
+				type : 'POST',
+				data : $('#STD_Demo_Entity').serialize(),
+				success : function(response) {
+					alert(response);
+					getList();
+				},
+			error: function(xhr, status, error) {
+	            alert("Error: " + error);
+	        }
+			});
+
+		}
+	}
+	function getList(){
+		location.href='Demo?formmode=List'
+	}
+	function getadd(){
+		location.href='Demo?formmode=add'
+	}
+	function getedit(a){
+		var srl_no=a.getAttribute("data-srl_no")
+		location.href='Demo?formmode=edit&srl_no=' + srl_no
+		
+	}
+	function getdelete(a) {
+	    var srl_no = a.getAttribute("data-srl_no");
+
+	    if (confirm("Are you sure you want to delete this record")) {
+	        $.ajax({
+	            url: "deletedata?srl_no=" + srl_no,
+	            type: "GET",
+	            success: function(response) {
+	                alert("Record deleted successfully");
+	                location.href = "Demo?formmode=List";
+	           
+	            	},
+	            error: function() {
+		           alert("Error" );
+		        }
+	        });
+	    }
+	}
+	
+
+	
+</script>
+</head>
+<body>
+
+<div class="container-fluid" style="padding-left:0px; padding-right:0px;">
+		<div class="row">
+		
+			<div th:insert="HeaderMenu :: header"></div>
+			
+
+			<div class="card" th:if="${formmode}=='List'" >
+				<div class="card-header" style="background-color: rgb(107, 122, 143) ; ">
+						<div class="float-left">
+							<h5 style="font-family: verdana; margin-left:20px; font-size: 20px; font-weight: bold; padding-top: 10px; ">demo</h5>
+						</div>	
+					<div class="custom-tab-btn-group nav-buttons float-right">
+						<button type="button" class="custom-tab-btn" id="custom-tab-btnAdd" onclick="getadd()" >Add</button>
+					</div>				
+				</div>
+
+			<div class="row" >
+				<div class="col-sm-12">
+					<div class="table-responsive scrollable-table-container" style="border-right: 1px solid #dee2e6; ">
+    					<table class="sticky-header-table table table-bordered table-hover table-sm table-condensed" id="reports" >
+							<thead class="thead-light">
+									<tr>
+				                    
+				                    <th>STUD_ID</th>
+				                    <th>NAME</th>
+				                    <th>PHONE_NO</th>
+				                    <th>AGE</th>
+				                    <th>GENDER</th>
+				                    <th>SRL_NO</th>
+				                    <th></th>
+				                    
+				                	</tr>
+
+								</thead>
+							
+							<tbody th:each="report: ${demoattribute}" style="font-family: Arial;">
+							<tr>
+								
+		                    	<td th:text="${report.stud_id}"></td>
+		                    	<td th:text="${report.name}"></td>
+		                    	<td th:text="${report.phone_no}"></td>
+		                    	<td th:text="${report.age}"></td>
+		                    	<td th:text="${report.gender}"></td>
+		                    	<td th:text="${report.srl_no}"></td>
+		                    	<td><button onclick="getedit(this);" th:attr="data-srl_no=${report.srl_no}">Modify</button></td>
+		                    	
+		                    
+		                   </tr> 
+							</tbody>
+							</table>
+							</div>
+							<div class="card-footer text-center" style="background-color: white;">
+						  		<button type="button" class="custom-tab-btn custom-tab-btn-xs" id="custom-tab-btnHome" onclick="home();">Home</button>
+						  		<button type="button" class="custom-tab-btn custom-tab-btn-xs" id="custom-tab-btnBack" onclick="back();">Back</button>
+							</div>
+							
+</div>
+</div>
+</div>
+<div class="card" th:if="${formmode}=='add'">
+						<div class="card-header"
+							style="background-color: rgb(107, 122, 143);">
+							<div class="float-left">
+								<h5
+									style="font-family: verdana; margin-left: 20px; font-size: 20px; font-weight: bold; padding-top: 10px;">Demo
+									User</h5>
+							</div>
+
+						</div>
+
+
+						<div class="row" style="padding-left: 10px;">
+							<div class="col-sm-12 ">
+								<form id="STD_Demo_Entity">
+									<div class="card-body"
+										style="max-height: 500px; overflow-y: auto; padding-right: 15px;">
+										<div class="form-group">
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label>STUD_ID</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="stud_id" />
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label >NAME</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="name" />
+												</div>
+											</div>
+
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label> PHONE_NO</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="phone_no"/>
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label>AGE</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="age"/>
+												</div>
+											</div>
+
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label>GENDER</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="gender"/>
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label >SRL_NO</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" class="form-control form-control-sm" name="srl_no"/>
+												</div>
+											</div>
+<!-- 											<div class="row formline"> -->
+<!-- 												<div class="col-sm-2"> -->
+<!-- 													<label>Extra Field</label> -->
+<!-- 												</div> -->
+<!-- 												<div class="col-sm-3"> -->
+<!-- 													<input type="text" class="form-control form-control-sm" /> -->
+<!-- 												</div> -->
+
+<!-- 											</div> -->
+										</div>
+
+									</div>
+									
+
+								</form>
+								<div class="card-footer text-center"
+										style="background-color: white;">
+										<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+											onclick="home();">Home</button>
+										<button type="submit" class="custom-tab-btn custom-tab-btn-xs" onclick= "addop();">Submit</button>
+										<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+											onclick="back();">Back</button>
+									</div>
+
+
+							</div>
+						</div>
+					</div>
+					<div class="card" th:if=" ${formmode}=='edit'">
+						<div class="card-header"
+							style="background-color: rgb(107, 122, 143);">
+							<div class="float-left">
+								<h5
+									style="font-family: verdana; margin-left: 20px; font-size: 20px; font-weight: bold; padding-top: 10px;">Demo
+									User</h5>
+							</div>
+
+						</div>
+
+
+						<div class="row" style="padding-left: 10px;">
+							<div class="col-sm-12 ">
+								<form id="STD_Demo_Entity">
+									<div class="card-body"
+										style="max-height: 500px; overflow-y: auto; padding-right: 15px;">
+										<div class="form-group">
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label>STUD_ID</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.stud_id}" class="form-control form-control-sm" name="stud_id" />
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label for="userName">NAME</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.name}" class="form-control form-control-sm" name="name" />
+												</div>
+											</div>
+
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label> PHONE_NO</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.phone_no}" class="form-control form-control-sm" name="phone_no"/>
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label>AGE</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.age}" class="form-control form-control-sm" name="age"/>
+												</div>
+											</div>
+
+											<div class="row formline" style="padding-bottom: 15px;">
+												<div class="col-sm-2">
+													<label>GENDER</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.gender}" class="form-control form-control-sm" name="gender"/>
+
+												</div>
+												<div class="col-sm-1"></div>
+												<div class="col-sm-2">
+													<label for="userName">SRL_NO</label>
+												</div>
+												<div class="col-sm-3">
+													<input type="text" th:value="${demoattribute.srl_no}" class="form-control form-control-sm" name="srl_no"/>
+												</div>
+											</div>
+<!-- 											<div class="row formline"> -->
+<!-- 												<div class="col-sm-2"> -->
+<!-- 													<label>Extra Field</label> -->
+<!-- 												</div> -->
+<!-- 												<div class="col-sm-3"> -->
+<!-- 													<input type="text" class="form-control form-control-sm" /> -->
+<!-- 												</div> -->
+
+<!-- 											</div> -->
+										</div>
+
+									</div>
+									
+
+								</form>
+								<div class="card-footer text-center"
+										style="background-color: white;">
+										<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+											onclick="home();">Home</button>
+										<button type="submit" class="custom-tab-btn custom-tab-btn-xs" onclick= "addop();">Submit</button>
+										
+										<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+											onclick="back();">Back</button>
+											<button type="submit" class="custom-tab-btn custom-tab-btn-xs" onclick= "getdelete(this);" th:attr="data-srl_no=${demoattribute.srl_no}">Delete</button>
+									</div>
+
+
+							</div>
+						</div>
+					</div>
+					
+</div>
+</div>
+							
+</body>
+</html>

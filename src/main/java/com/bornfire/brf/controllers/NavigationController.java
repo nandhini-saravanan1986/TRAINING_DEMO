@@ -3,6 +3,7 @@ package com.bornfire.brf.controllers;
 import java.io.File;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -15,11 +16,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+
 import javax.persistence.EntityManager;
 import javax.persistence.ParameterMode;
 import javax.persistence.PersistenceContext;
 import javax.persistence.StoredProcedureQuery;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
@@ -39,6 +42,7 @@ import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -59,6 +63,10 @@ import com.bornfire.brf.entities.RT_DataControl;
 import com.bornfire.brf.entities.RT_DatacontrolRepository;
 import com.bornfire.brf.entities.RT_NostroAccBalData;
 import com.bornfire.brf.entities.RT_NostroAccBalDataRepository;
+import com.bornfire.brf.entities.Request_code_mapping_Entity;
+import com.bornfire.brf.entities.Request_code_mapping_Repo;
+import com.bornfire.brf.entities.STD_Demo_Entity;
+import com.bornfire.brf.entities.STD_Demo_Repo;
 import com.bornfire.brf.entities.UserProfile;
 import com.bornfire.brf.entities.UserProfileRep;
 import com.bornfire.brf.entities.RRReportRepo;
@@ -69,6 +77,8 @@ import com.bornfire.brf.services.AccessAndRolesServices;
 import com.bornfire.brf.services.LoginServices;
 import com.bornfire.brf.services.NostroAccBalDataService;
 import com.bornfire.brf.services.RT_DataControlService;
+import com.bornfire.brf.services.Request_code_mapping_service;
+import com.bornfire.brf.services.crud_operations;
 
 @Controller
 @ConfigurationProperties("default")
@@ -117,6 +127,18 @@ public class NavigationController {
 
 	@Autowired
 	RT_CountryRiskDropdownRepo countryRepo;
+	
+	@Autowired
+	STD_Demo_Repo std_demo_repo; 
+	
+	@Autowired
+	crud_operations crud_operation;
+	
+	@Autowired
+	Request_code_mapping_Repo request_code_mapping_repo ;
+	
+	@Autowired
+	Request_code_mapping_service request_code_mapping_service;
 
 	private String pagesize;
 
@@ -457,7 +479,123 @@ public class NavigationController {
 		// md.addAttribute("rpt_date", todate);
 		return "BRFValidations";
 	}
+	@RequestMapping(value = "Demo", method = { RequestMethod.GET, RequestMethod.POST })
+	public String Demo(Model md,@RequestParam(required = false) String formmode,@RequestParam(required = false) BigDecimal srl_no,HttpServletRequest req)
+	{
+		if(formmode==null || formmode.equals("List") ) {
+			List<STD_Demo_Entity> List_Demo=std_demo_repo.getListbydate();
+			System.out.println("srl_no:"+List_Demo.get(0).getSrl_no());
+			
+			md.addAttribute("demoattribute",List_Demo);
+			md.addAttribute("formmode","List");
+		}
+		else if(formmode.equals("add")){
+			md.addAttribute("formmode","add");
+			
+		}
+		else if(formmode.equals("edit")){
+			md.addAttribute("formmode","edit");
+			
+			md.addAttribute("demoattribute",crud_operation.getData(srl_no));
+			
+		}
+		else if(formmode.equals("deletedata")){
+			md.addAttribute("formmode","deletedata");
+		}
+		
+		return "Demo";
+		
+	}
+	@RequestMapping(value = "add", method = { RequestMethod.GET, RequestMethod.POST })
+	@ResponseBody
+	public String add(@ModelAttribute STD_Demo_Entity STD_Demo_Entity, HttpServletRequest req) {
+		return crud_operation.add(STD_Demo_Entity);
+	}
 	
 	
+	@RequestMapping(value = "deletedata", method = { RequestMethod.GET, RequestMethod.POST })
+	@ResponseBody
+	public String deletedata(@RequestParam("srl_no") BigDecimal srl_no, HttpServletRequest req) {
+	    crud_operation.deletedata(srl_no);
+	    return "deleted";
+	}
 	
+	
+	@RequestMapping(value = "RequestCodeMapping", method = { RequestMethod.GET, RequestMethod.POST })
+	public String Requestcodemapping(Model md,@RequestParam(required = false) String formmode,@RequestParam( required = false) String keyword,HttpServletRequest req) {
+		
+		if(formmode==null || formmode.equals("List") ) {
+			List<Request_code_mapping_Entity> RCM_List=request_code_mapping_repo.getListbydate();
+			System.out.println("Cust_id:"+RCM_List.get(0).getCustomer_Id());
+			
+			md.addAttribute("rcmattribute",RCM_List);
+			md.addAttribute("formmode","List");
+		}
+		else if(formmode.equals("MAList")) {
+			List<Request_code_mapping_Entity> MA_List=request_code_mapping_repo.getListbyMAList();
+			md.addAttribute("rcmattribute",MA_List);
+			md.addAttribute("formmode","MAList");
+		}
+		else if(formmode.equals("UMAList")) {			
+			List<Request_code_mapping_Entity> UMA_List=request_code_mapping_repo.getListbyUMAList();
+			System.out.println("Cust_id:"+UMA_List.get(0).getCustomer_Id());
+			md.addAttribute("rcmattribute",UMA_List);
+			md.addAttribute("formmode","UMAList");
+		}
+		else if(formmode.equals("addcustomer")){
+			md.addAttribute("formmode","addcustomer");
+			
+		}	
+		else if(formmode.equals("search")) {
+			System.out.println(keyword);
+		    List<Request_code_mapping_Entity> slist = request_code_mapping_repo.searchByKeyword(keyword);
+		    md.addAttribute("rcmattribute", slist);
+		}
+		
+		else if(formmode.equals("masearch")) {
+			System.out.println(keyword);
+		    List<Request_code_mapping_Entity> malist = request_code_mapping_repo.searchByKeywordMA(keyword);
+		    md.addAttribute("rcmattribute", malist);
+		    md.addAttribute("action", "searchma");
+		}
+		
+		else if(formmode.equals("umasearch")) {
+			System.out.println(keyword);
+		    List<Request_code_mapping_Entity> umalist = request_code_mapping_repo.searchByKeywordUMA(keyword);
+		    md.addAttribute("rcmattribute", umalist);
+		    md.addAttribute("action", "searchuma");
+		}
+		
+		
+		return "RequestCodeMapping";
+	
+	}
+	@RequestMapping(value = "getdata", method = { RequestMethod.GET, RequestMethod.POST })
+	@ResponseBody
+	public Request_code_mapping_Entity getdata(@RequestParam String id) {
+	    System.out.println("Fetching ID: " + id);
+	    Request_code_mapping_Entity entity = request_code_mapping_repo.findById(id).orElse(null);
+	    System.out.println("Entity: " + entity);
+	    return entity;
+	}
+	
+	@RequestMapping(value = "addcustomer", method = { RequestMethod.GET, RequestMethod.POST })
+	@ResponseBody
+	public String addcustomer(@ModelAttribute Request_code_mapping_Entity Request_code_mapping_Entity, HttpServletRequest req) {
+		return request_code_mapping_service.add(Request_code_mapping_Entity);
+	}
+	
+	@RequestMapping(value = "downloadcustomer", method = { RequestMethod.GET, RequestMethod.POST })
+	@ResponseBody
+	public void downloadcustomer(@ModelAttribute Request_code_mapping_Entity requestEntity,HttpServletResponse response,@RequestParam("keyword") String keyword) {
+	    try {
+	        byte[] excelData = request_code_mapping_service.generateExcel(keyword);
+	        response.setHeader("Content-Disposition", "attachment; filename=Request_Code_Mapping.xlsx");
+	        response.getOutputStream().write(excelData);
+	    } catch (Exception e) {
+	        e.printStackTrace();
+	    }
+	}
+	   
+
 }

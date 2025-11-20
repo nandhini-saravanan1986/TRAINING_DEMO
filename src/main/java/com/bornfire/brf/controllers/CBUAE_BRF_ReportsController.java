@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -45,6 +46,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
+
+import com.bornfire.brf.services.BRF_67_ReportService;
 import com.bornfire.brf.services.RegulatoryReportServices;
 
 
@@ -56,6 +59,9 @@ public class CBUAE_BRF_ReportsController {
 	private static final Logger logger = LoggerFactory.getLogger(CBUAE_BRF_ReportsController.class);
 		@Autowired
 		RegulatoryReportServices regreportServices;
+		
+		@Autowired
+		BRF_67_ReportService BRF_67_reportservice;
 	
 		private String pagesize;
 	
@@ -186,6 +192,7 @@ public class CBUAE_BRF_ReportsController {
 		        @RequestParam(value = "instancecode", required = false) String instancecode,
 		        @RequestParam(value = "filter", required = false) String filter)
 		        throws SQLException, FileNotFoundException {
+				
 		    
 		    response.setContentType("application/octet-stream");
 		    try {
@@ -291,5 +298,100 @@ public class CBUAE_BRF_ReportsController {
 		        }
 		        return ResponseEntity.ok("READY");
 		    }
+		 
+			
+			  @RequestMapping(value = "downloadpdf", method = { RequestMethod.GET,RequestMethod.POST })			  
+			  public void BRFDownloadpdf(HttpServletResponse response,			  
+			  @RequestParam("reportid") String reportid,			  
+			  @RequestParam("asondate") String asondate,			  
+			  @RequestParam("fromdate") String fromdate,			  
+			  @RequestParam("todate") String todate,			  
+			  @RequestParam("currency") String currency,			  
+			  @RequestParam(value = "subreportid", required = false) String subreportid,			  
+			  @RequestParam(value = "secid", required = false) String secid,			  
+			  @RequestParam(value = "dtltype", required = false) String dtltype,			  
+			  @RequestParam(value = "reportingTime", required = false) String reportingTime,			  
+			  @RequestParam(value = "filename", required = false) String filename,			  
+			  @RequestParam(value = "instancecode", required = false) String instancecode,			  
+			  @RequestParam(value = "filter", required = false) String filter) throws
+			  SQLException, FileNotFoundException {
+				  try {
+					  
+					  DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
+
+						try {
+
+							fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+							todate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+						} catch (ParseException e) {
+							e.printStackTrace();
+						}
+				  
+				  byte[] pdfBytes = regreportServices.getPdfDownloadFile(reportid, filename, asondate, fromdate, todate, currency,
+			                subreportid, secid, dtltype, reportingTime, instancecode, filter);
+			  
+			  //  Write PDF to response 
+				  response.setContentType("application/pdf");
+			        response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
+			        response.setContentLength(pdfBytes.length);
+
+			        try (ServletOutputStream out = response.getOutputStream()) {
+			            out.write(pdfBytes);
+			            out.flush();
+			        }
+
+			    } catch (Exception e) {
+			        e.printStackTrace();
+			    }
+			}
+			  
+			  
+			  
+			  
+			  
+			  
+			/*
+			 * @RequestMapping(value = "downloaddetailpdf", method = { RequestMethod.GET,
+			 * RequestMethod.POST }) public void detailDownloadpdf(HttpServletResponse
+			 * response,
+			 * 
+			 * @RequestParam("fromdate") String fromdate,
+			 * 
+			 * @RequestParam("todate") String todate,
+			 * 
+			 * @RequestParam(value = "filename", required = false) String filename) throws
+			 * SQLException, FileNotFoundException { System.out.println("Control");
+			 * 
+			 * try { byte[] pdfBytes = regreportServices.getDetailPdfDownloadFile(filename,
+			 * fromdate, todate);
+			 * 
+			 * // Write PDF to response response.setContentType("application/pdf");
+			 * response.setHeader("Content-Disposition",
+			 * "attachment; filename=\"report.pdf\"");
+			 * response.setContentLength(pdfBytes.length);
+			 * 
+			 * try (ServletOutputStream out = response.getOutputStream()) {
+			 * out.write(pdfBytes); out.flush(); } } catch (Exception e) { logger.
+			 * error("Controller ERROR: A critical error occurred during file generation.",
+			 * e); } }
+			 */
+			  @RequestMapping(value = "/startreportpdf", method = { RequestMethod.GET, RequestMethod.POST })
+			   @ResponseBody 
+			    public String startReportpdf(@RequestParam String filename,
+			    						@RequestParam("fromdate") String fromdate,
+			    						@RequestParam("todate") String todate,
+			                            @RequestParam String currency,
+			                            @RequestParam("dtltype") String dtltype,
+			                            @RequestParam("type") String type, 
+			                            @RequestParam(value = "version", required = false) String version) 	
+			   {
+			        String jobId = UUID.randomUUID().toString();
+					regreportServices.generateReportAsyncpdf(jobId, filename, fromdate, todate, dtltype, type, currency, version);
+			        //RT_SLSServices.generateReportAsync(jobId, filename, reportdate, currency,version);
+			        return jobId;
+			    }
+			  
+				
+				
 				
 }

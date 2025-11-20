@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}">
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.css}">
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/datatables/1.10.19/css/jquery.dataTables.min.css}">
+<link rel="stylesheet" th:href="@{/css/CustomButton.css}" />
+<link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon" />
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script src="/webjars/jquery-validation/1.19.0/jquery.validate.min.js"
+	th:src="@{/webjars/jquery-validation/1.19.0/jquery.validate.min.js}"></script>
+<script th:src="@{/webjars/popper.js/1.14.7/umd/popper.min.js}"></script>
+<script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+<script th:src="@{/webjars/jquery-ui/1.12.1/jquery-ui.min.js}"></script>
+<script th:src="@{/webjars/jquery-form/4.2.2/jquery.form.min.js}"></script>
+<script
+	th:src="@{/webjars/datatables/1.10.19/js/jquery.dataTables.min.js}"></script>
+<script
+	th:src="@{/webjars/datatables/1.10.19/js/dataTables.bootstrap4.min.js}"></script>
+
+
+<style>
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	background-color: var(--dark-bg);
+	color: var(--dark-text-primary);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	display: flex;
+	flex-direction: column;
+	font-family: 'verdana', sans-serif;
+	font-size: 0.875rem;
+	overflow: hidden;
+}
+
+input {
+	width: 200px;
+	border-radius: 10px;
+	padding: 5px;
+}
+
+.popup {
+	display: none;
+	position: fixed;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.4);
+	text-align: center;
+}
+
+.popup-content {
+	background-color: white;
+	margin: 3% auto;
+	padding: 25px 30px;
+	width: 60%;
+	border-radius: 15px;
+	font-family: 'verdana', sans-serif;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.popup-content h3 {
+	margin-bottom: 20px;
+	text-align: center;
+	color: #2c3e50;
+}
+
+.form-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	column-gap: 30px;
+	row-gap: 15px;
+	margin-bottom: 10px;
+}
+
+.form-group {
+	display: flex;
+	align-items: center;
+}
+
+.form-group label {
+	width: 40%;
+	text-align: right;
+	margin-right: 8px;
+	font-weight: bold;
+	color: #333;
+}
+
+.form-group input {
+	width: 60%;
+	padding: 6px 10px;
+	border: 1px solid #ccc;
+	border-radius: 5px;
+	font-size: 14px;
+}
+
+.button-row {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+	margin-top: 20px;
+}
+
+.cancelbtn {
+	background-color: red;
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.cancelbtn:hover {
+	background-color: darkred;
+}
+
+.savebtn {
+	background-color: green;
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.savebtn:hover {
+	background-color: darkgreen;
+}
+
+.custom-tab-btn.select {
+	background-color: #6B7A8F;
+	color: white;
+	border: 2px solid white;
+}
+</style>
+
+
+<script type="text/javascript">
+	$(document).ready(
+			function() {
+				$('.dropdown, .dropdown-submenu').hover(
+						function() {
+							$(this).children('.dropdown-menu').stop(true, true)
+									.delay(200).fadeIn(200);
+						},
+						function() {
+							$(this).children('.dropdown-menu').stop(true, true)
+									.delay(200).fadeOut(200);
+						});
+			});
+	function home() {
+		location.href = 'Dashboard'
+	}
+
+	function back() {
+		window.history.back();
+	}
+	function MAfunc() {
+
+		let mabtn = document.getElementById("mafuncbtn");
+		mabtn.style.backgroundColor = "#6B7A8F";
+		mabtn.style.color = "white";
+		mabtn.style.borderColor = "white";
+		location.href = 'RequestCodeMapping?formmode=MAList'
+	}
+	function UMAfunc() {
+		let umabtn = document.getElementById("umafuncbtn");
+		umabtn.style.backgroundColor = "#6B7A8F";
+		umabtn.style.color = "white";
+		umabtn.style.borderColor = "white";
+		location.href = 'RequestCodeMapping?formmode=UMAList'
+	}
+	function cancel() {
+		location.href = 'RequestCodeMapping?formmode=UMAList'
+	}
+
+	function getedit(element) {
+		var id = $(element).attr("data-cust_id");
+		console.log("Fetching ID:", id);
+
+		$.ajax({
+			url : "getdata?id=" + id,
+			type : "GET",
+			success : function(cid) {
+				console.log("Customer_Id:", cid);
+				if (cid) {
+					$("#editCustomerId").val(cid.customer_Id);
+					$("#editAccountNo").val(cid.account_No);
+					$("#editAccountName").val(cid.account_Name);
+					$("#editReportCode").val(cid.report_Code);
+					$("#editReportLabel").val(cid.report_Label);
+					$("#editSchemeCode").val(cid.scheme_Code);
+					$("#editGLSH").val(cid.glsh);
+					$("#editCriteria1").val(cid.criteria1);
+					$("#editCriteria2").val(cid.criteria2);
+					$("#editCriteria3").val(cid.criteria3);
+
+					$("#mypopup").show();
+				} else {
+					alert("No record found!");
+				}
+			},
+			error : function() {
+				alert("Failed to fetch employee details!");
+			}
+		});
+	}
+
+	function save() {
+		alert("alertwindow")
+		if ($("#Request_code_mapping_Entity").valid()) {
+
+			$.ajax({
+				url : './addcustomer',
+				type : 'POST',
+				data : $('#Request_code_mapping_Entity').serialize(),
+				success : function(response) {
+					alert(response);
+					location.href = 'RequestCodeMapping?formmode=UMAList';
+				},
+				error : function(xhr, status, error) {
+					alert("Error: " + error);
+				}
+			});
+
+		}
+	}
+	function download(keyword) {
+		alert("Starting download");
+		if ($("#Request_code_mapping_Entity").valid()) {
+			var query = $('#Request_code_mapping_Entity').serialize();
+			window.location.href = './downloadcustomer?' + query + '&keyword='
+					+ encodeURIComponent(keyword);
+		}
+	}
+</script>
+<meta charset="UTF-8">
+<title>Request Code Mapping</title>
+</head>
+<body>
+	<div th:insert="~{HeaderMenu :: header}"></div>
+	<div class="card">
+		<div class="card-header" style="background-color: rgb(107, 122, 143);">
+			<div class="float-left">
+				<h5
+					style="font-family: verdana; margin-left: 20px; font-size: 20px; font-weight: bold; padding-top: 10px; padding-right: 50px;">Request
+					Code Mapping</h5>
+			</div>
+		</div>
+		<div
+			style="display: flex; justify-content: space-between; align-items: center; padding-left: 100px;">
+			<div style="display: flex; gap: 30px;">
+
+				<button type="button" id="mafuncbtn" class="custom-tab-btn"
+					th:classappend="${(formmode == 'MAList' or action == 'searchma')} ? ' select' : ''"
+					style="width: 250px;"
+					th:if="${formmode == 'List' or formmode == null or formmode == 'UMAList' or formmode == 'MAList' or action == 'searchma'}"
+					onclick="MAfunc()">Mapped Accounts</button>
+
+				<button type="button" id="umafuncbtn" class="custom-tab-btn"
+					th:classappend="${(formmode == 'UMAList' or action == 'searchuma')} ? ' select' : ''"
+					style="width: 250px;"
+					th:if="${formmode == 'List' or formmode == null or formmode == 'MAList' or formmode == 'UMAList' or action == 'searchuma'}"
+					onclick="UMAfunc()">Unmapped Accounts</button>
+
+			</div>
+			<button type="button" class="custom-tab-btn"
+				th:if="${(formmode == 'List' or formmode == null) and (action != 'searchma' and action != 'searchuma')}"
+				style="width: 150px; margin-left: 750px" onclick="download('List')">Download</button>
+			<button type="button" class="custom-tab-btn"
+				th:if="${(formmode == 'MAList') or (action == 'searchma')}"
+				style="width: 150px; margin-left: 750px"
+				onclick="download('MAList')">Download</button>
+			<button type="button" class="custom-tab-btn"
+				th:if="${(formmode=='UMAList') or (action == 'searchuma')}"
+				style="width: 150px; margin-left: 750px"
+				onclick="download('UMAList')">Download</button>
+
+			<div
+				th:if="${(formmode == 'List' or formmode == null) and (action != 'searchma' and action != 'searchuma')}"
+				style="padding: 30px; text-align: right; font-family: verdana;">
+				<form th:action="@{/RequestCodeMapping}">
+					<input type="hidden" name="formmode" value="search">
+					Search: <input type="text" name="keyword"
+						placeholder="Enter keyword" />
+				</form>
+			</div>
+
+			<div th:if="${(formmode == 'MAList') or (action == 'searchma')}"
+				style="padding: 30px; text-align: right; font-family: verdana;">
+				<form th:action="@{/RequestCodeMapping}">
+					<input type="hidden" name="formmode" value="masearch">
+					Search: <input type="text" name="keyword"
+						placeholder="Enter keyword" />
+				</form>
+			</div>
+
+			<div th:if="${(formmode == 'UMAList') or (action == 'searchuma')}"
+				style="padding: 30px; text-align: right; font-family: verdana;">
+				<form th:action="@{/RequestCodeMapping}">
+					<input type="hidden" name="formmode" value="umasearch">
+					Search: <input type="text" name="keyword"
+						placeholder="Enter keyword" />
+				</form>
+			</div>
+
+		</div>
+
+		<div class="row">
+			<div class="col-sm-12">
+				<div class="table-responsive scrollable-table-container"
+					style="border-right: 1px solid #dee2e6;">
+					<table
+						class="sticky-header-table table table-bordered table-hover table-sm table-condensed"
+						id="reports">
+						<thead class="thead-light">
+							<tr>
+								<th th:if="${(formmode=='UMAList') or (action == 'searchuma')}"></th>
+								<th>Customer Id</th>
+								<th>Account No</th>
+								<th>Name of Account</th>
+								<th>Report Code</th>
+								<th>Report Label</th>
+								<th>Scheme Code</th>
+								<th>GLSH</th>
+								<th>Criteria1</th>
+								<th>Criteria2</th>
+								<th>Criteria3</th>
+
+
+							</tr>
+
+						</thead>
+
+						<tbody th:each="report: ${rcmattribute}"
+							style="font-family: Arial;">
+							<tr>
+								<td th:if="${(formmode=='UMAList') or (action == 'searchuma')}"><a
+									data-toggle="tooltip" class="editrec"
+									title="Click to Edit this Record"> <i class="fas fa-edit"
+										onclick="getedit(this)"
+										th:attr="data-cust_id=${report.Customer_Id}"></i></a></td>
+								<td th:text="${report.Customer_Id}"></td>
+								<td th:text="${report.Account_No}"></td>
+								<td th:text="${report.Account_Name}"></td>
+								<td th:text="${report.Report_Code}"></td>
+								<td th:text="${report.Report_Label}"></td>
+								<td th:text="${report.Scheme_Code}"></td>
+								<td th:text="${report.GLSH}"></td>
+								<td th:text="${report.Criteria1}"></td>
+								<td th:text="${report.Criteria2}"></td>
+								<td th:text="${report.Criteria3}"></td>
+
+
+							</tr>
+						</tbody>
+					</table>
+					<div id="mypopup" class="popup">
+						<div class="popup-content">
+							<form id="Request_code_mapping_Entity">
+								<h3>Edit Record</h3>
+
+								<div class="form-row">
+									<div class="form-group">
+										<label>Customer ID:</label> <input type="text"
+											style="background-color: lightgrey" id="editCustomerId"
+											name="Customer_Id" readonly>
+									</div>
+									<div class="form-group">
+										<label>Account Number:</label> <input type="text"
+											style="background-color: lightgrey" id="editAccountNo"
+											readonly>
+									</div>
+
+									<div class="form-group">
+										<label>Account Name:</label> <input type="text"
+											style="background-color: lightgrey" id="editAccountName"
+											name="Account_Name" readonly>
+									</div>
+									<div class="form-group">
+										<label>Report Code:</label> <input type="text"
+											id="editReportCode" name="Report_Code">
+									</div>
+
+									<div class="form-group">
+										<label>Report Label:</label> <input type="text"
+											id="editReportLabel" name="Report_Label">
+									</div>
+									<div class="form-group">
+										<label>Scheme Code:</label> <input type="text"
+											style="background-color: lightgrey" id="editSchemeCode"
+											name="Scheme_Code" readonly>
+									</div>
+
+									<div class="form-group">
+										<label>GLSH:</label> <input type="text"
+											style="background-color: lightgrey" id="editGLSH" name="GLSH"
+											readonly>
+									</div>
+									<div class="form-group">
+										<label>Criteria1:</label> <input type="text"
+											id="editCriteria1" name="Criteria1">
+									</div>
+
+									<div class="form-group">
+										<label>Criteria2:</label> <input type="text"
+											id="editCriteria2" name="Criteria2">
+									</div>
+									<div class="form-group">
+										<label>Criteria3:</label> <input type="text"
+											id="editCriteria3" name="Criteria3">
+									</div>
+								</div>
+
+								<div class="button-row">
+									<button type="button" class="cancelbtn" onclick="cancel()">Cancel</button>
+									<button type="button" class="savebtn" onclick="save()">Save</button>
+								</div>
+							</form>
+						</div>
+					</div>
+
+				</div>
+
+
+			</div>
+			<div class="card-footer text-center" style="background-color: white;">
+				<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+					id="custom-tab-btnHome" onclick="home();">Home</button>
+				<button type="button" class="custom-tab-btn custom-tab-btn-xs"
+					id="custom-tab-btnBack" onclick="back();">Back</button>
+			</div>
+
+		</div>
+	</div>
+
+
+</body>
+</html>
