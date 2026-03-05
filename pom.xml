@@ -10,11 +10,11 @@
 		<relativePath /> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.bornfire</groupId>
-	<artifactId>BRFNEWDEMO</artifactId>
+	<artifactId>TRAINING_DEMO</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>war</packaging>
-	<name>BRFNEWDEMO</name>
-	<description>BRFNEWDEMO</description>
+	<name>TRAINING_DEMO</name>
+	<description>TRAINING_DEMO</description>
 
 	<properties>
 		<java.version>1.8</java.version>
@@ -234,7 +234,7 @@
 
 	
 	<build>
-		<finalName>BRFNEWDEMO</finalName>
+		<finalName>TRAINING_DEMO</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
