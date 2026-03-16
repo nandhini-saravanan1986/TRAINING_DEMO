@@ -71,6 +71,8 @@ import com.bornfire.brf.entities.UserProfile;
 import com.bornfire.brf.entities.UserProfileRep;
 import com.bornfire.brf.entities.RRReportRepo;
 import com.bornfire.brf.entities.CBUAE_BRFValidationsRepo;
+import com.bornfire.brf.entities.BRF_62_Summary_Entity;
+import com.bornfire.brf.entities.BRF_62_Summary_Repo;
 
 
 import com.bornfire.brf.services.AccessAndRolesServices;
@@ -80,6 +82,9 @@ import com.bornfire.brf.services.RT_DataControlService;
 import com.bornfire.brf.services.Request_code_mapping_service;
 import com.bornfire.brf.services.crud_operations;
 
+
+import com.bornfire.brf.services.EmployeeReportService;
+import com.bornfire.brf.entities.EmployeeReport;
 @Controller
 @ConfigurationProperties("default")
 public class NavigationController {
@@ -139,6 +144,12 @@ public class NavigationController {
 	
 	@Autowired
 	Request_code_mapping_service request_code_mapping_service;
+	
+	@Autowired
+	BRF_62_Summary_Repo brf62SummaryRepo;
+	
+	@Autowired
+	EmployeeReportService service;
 
 	private String pagesize;
 
@@ -595,7 +606,95 @@ public class NavigationController {
 	    } catch (Exception e) {
 	        e.printStackTrace();
 	    }
+	    
+	    
 	}
-	   
+	@GetMapping("/BRF62")
+	public String brf62(Model model){
 
+	    List<BRF_62_Summary_Entity> list = brf62SummaryRepo.findAll();
+
+	    model.addAttribute("brf62list", list);
+
+	    return "BRF62_LIST";
+	}
+
+	@GetMapping("/BRF62/add")
+	public String addReport(Model model){
+
+	    model.addAttribute("brf62", new BRF_62_Summary_Entity());
+
+	    return "BRF62_FORM";
+	}
+
+
+	@PostMapping("/BRF62/save")
+	public String saveReport(@ModelAttribute BRF_62_Summary_Entity brf62){
+
+	    brf62SummaryRepo.save(brf62);
+
+	    return "redirect:/BRF62";
+	}
+	@GetMapping("/BRF62/delete/{id}")
+	public String deleteReport(@PathVariable("id") String id){
+
+	brf62SummaryRepo.deleteById(id);
+
+	return "redirect:/BRF62";
+
+	}
+	@GetMapping("/BRF62/view/{id}")
+	public String viewBRF62(@PathVariable("id") String id, Model model){
+
+	BRF_62_Summary_Entity data = brf62SummaryRepo.findById(id).orElse(null);
+
+	model.addAttribute("report", data);
+
+	return "BRF62_VIEW";
+
+	}
+	
+	// EMPLOYEE_REPORT
+	@GetMapping("/employee/list")
+	public String listEmployees(Model model) {
+
+	    List<EmployeeReport> list = service.getAllEmployees();
+	    model.addAttribute("employeeList", list);
+
+	    return "employee_list";
+	}
+	
+	@GetMapping("/employee/add")
+	public String addEmployee(Model model) {
+
+	    EmployeeReport emp = new EmployeeReport();
+	    model.addAttribute("employee", emp);
+
+	    return "employee_add";
+	}
+	
+	@PostMapping("/employee/save")
+	public String saveEmployee(@ModelAttribute("employee") EmployeeReport emp) {
+
+	    service.saveEmployee(emp);
+	    return "redirect:/employee/list";
+	}
+	
+	@GetMapping("/employee/delete/{id}")
+	public String deleteEmployee(@PathVariable Integer id) {
+
+	    service.deleteEmployee(id);
+	    return "redirect:/employee/list";
+	}
+	
+	@GetMapping("/employee/edit/{id}")
+	public String editEmployee(@PathVariable Integer id, Model model) {
+
+	    EmployeeReport emp = service.getEmployeeById(id);
+	    model.addAttribute("employee", emp);
+
+	    return "employee_edit";
+	}
+	
+	
 }

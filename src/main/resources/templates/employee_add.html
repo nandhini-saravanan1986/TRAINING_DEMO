@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+<title>Add Employee</title>
+
+<style>
+
+body{
+font-family: Arial, Helvetica, sans-serif;
+background:#f4f7fb;
+margin:40px;
+}
+
+.container{
+width:500px;
+margin:auto;
+background:white;
+padding:25px;
+border-radius:8px;
+box-shadow:0px 0px 10px rgba(0,0,0,0.1);
+}
+
+h2{
+text-align:center;
+color:#444;
+margin-bottom:20px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+text-align:left;
+padding:10px;
+background:#e6f0fa;
+color:#333;
+width:40%;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #ddd;
+}
+
+input{
+width:100%;
+padding:8px;
+border:1px solid #ccc;
+border-radius:4px;
+}
+
+.button-row{
+text-align:center;
+margin-top:20px;
+}
+
+.save-btn{
+background:#6fa8dc;
+color:white;
+border:none;
+padding:8px 16px;
+border-radius:5px;
+cursor:pointer;
+}
+
+.save-btn:hover{
+background:#5b95c9;
+}
+
+.back-btn{
+background:#d9e6f5;
+color:#333;
+border:none;
+padding:8px 16px;
+border-radius:5px;
+cursor:pointer;
+margin-left:10px;
+text-decoration:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Add Employee</h2>
+
+<form th:action="@{/employee/save}" th:object="${employee}" method="post">
+
+<table>
+
+<tr>
+<th>Name</th>
+<td>
+<input type="text" th:field="*{name}" required>
+</td>
+</tr>
+
+<tr>
+<th>Age</th>
+<td>
+<input type="number" th:field="*{age}" required>
+</td>
+</tr>
+
+<tr>
+<th>Department</th>
+<td>
+<input type="text" th:field="*{dept}" required>
+</td>
+</tr>
+
+<tr>
+<th>Place</th>
+<td>
+<input type="text" th:field="*{place}" required>
+</td>
+</tr>
+
+<tr>
+<th>Joined Year</th>
+<td>
+<input type="number" th:field="*{joinedYear}" required>
+</td>
+</tr>
+
+</table>
+
+<div class="button-row">
+
+<button class="save-btn" type="submit">
+Save
+</button>
+
+<a th:href="@{/employee/list}" class="back-btn">
+Back
+</a>
+
+</div>
+
+</form>
+
+</div>
+
+</body>
+</html>
+

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<title>Employee List</title>
+
+<style>
+
+body{
+font-family: Arial, Helvetica, sans-serif;
+background-color:#f5f7fa;
+margin:40px;
+}
+
+.container{
+background:white;
+padding:20px;
+border-radius:8px;
+box-shadow:0px 0px 8px rgba(0,0,0,0.1);
+}
+
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+h2{
+color:#444;
+}
+
+.add-btn{
+background:#6fa8dc;
+color:white;
+padding:8px 14px;
+border:none;
+border-radius:5px;
+cursor:pointer;
+font-size:14px;
+}
+
+.add-btn:hover{
+background:#5b95c9;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+background:#e6f0fa;
+color:#333;
+padding:10px;
+text-align:left;
+font-size:14px;
+}
+
+td{
+padding:10px;
+border-bottom:1px solid #ddd;
+font-size:14px;
+}
+
+tr:hover{
+background:#f2f6fb;
+}
+
+.action-btn{
+padding:4px 10px;
+border-radius:4px;
+text-decoration:none;
+font-size:12px;
+margin-right:5px;
+}
+
+.edit{
+background:#d9e6f5;
+color:#333;
+}
+
+.delete{
+background:#d9e6f5;
+color:#333;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="header">
+<h2>Employee List</h2>
+
+<a th:href="@{/employee/add}">
+<button class="add-btn">Add Employee</button>
+</a>
+
+</div>
+
+<table>
+
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Age</th>
+<th>Department</th>
+<th>Place</th>
+<th>Joined Year</th>
+<th>Actions</th>
+</tr>
+
+<tr th:each="emp : ${employeeList}">
+<td th:text="${emp.id}"></td>
+<td th:text="${emp.name}"></td>
+<td th:text="${emp.age}"></td>
+<td th:text="${emp.dept}"></td>
+<td th:text="${emp.place}"></td>
+<td th:text="${emp.joinedYear}"></td>
+
+<td>
+<a class="action-btn edit"
+th:href="@{/employee/edit/{id}(id=${emp.id})}">
+Edit
+</a>
+
+<a class="action-btn delete"
+th:href="@{/employee/delete/{id}(id=${emp.id})}">
+Delete
+</a>
+</td>
+
+</tr>
+
+</table>
+
+</div>
+
+</body>
+</html>
