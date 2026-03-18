@@ -1,0 +1,450 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-4.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}">
+    <link rel="stylesheet" th:href="@{/css/CustomButton.css}" />
+    <script th:src="@{/webjars/jquery/3.4.1/jquery.min.js}"></script>
+    <script th:src="@{/webjars/popper.js/1.14.7/umd/popper.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+
+    <style>
+        div span { font-weight: bold; color: white !important; }
+        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+
+        td {
+            border: 1px solid rgb(0,164,166);
+            overflow: hidden; white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        .display-input {
+            background-color: transparent;
+            border: none; height: 28px;
+            text-align: right; width: 100%;
+            color: inherit; font-weight: inherit;
+        }
+
+        .header-row td { background-color: #b3b6b9 !important; font-weight: bold; }
+        .total-row td { background-color: #b3b6b9 !important; font-weight: bold !important; color: black !important; }
+        .sub-row td { background-color: #FFFFFF; font-weight: normal; }
+
+        .left-arrow-circle { width: 35px; height: 35px; border-radius: 50%; background-color: white; font-weight: bold; display: flex; align-items: center; justify-content: center; margin-right: 10px; transition: background-color 0.3s, transform 0.2s; }
+        .left-arrow-circle i { color: rgb(107, 122, 143); }
+        .left-arrow-circle:hover { background-color: rgb(107, 122, 143); cursor: pointer; transform: scale(1.05); border: 2px solid white; }
+        .left-arrow-circle:hover i { color: white; }
+
+        .white-text span { color: white !important; }
+
+        .scrollable-table-container { max-height: 620px; overflow-y: auto; border: 1px solid #ccc; }
+        .scrollable-table-container thead tr { position: sticky; top: 0; background-color: #b3b6b9; z-index: 5; }
+
+        .boards { transform: translateY(6px); background-color: rgb(107, 122, 143); color: white; padding: 5px 80px; border-radius: 8px; overflow: hidden; white-space: nowrap; flex: 1; min-width: 200px; box-shadow: 0 0 10px rgb(107, 122, 143); position: relative; }
+        .scrolling-text { display: inline-block; font-family: "Courier New", monospace; font-weight: bold; letter-spacing: 1px; animation: scroll-left 10s linear infinite; }
+        @keyframes scroll-left { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        table tbody tr td:nth-child(2) { background-color: #b3b6b9 !important; font-weight: bold; }
+    </style>
+
+    <script th:inline="javascript">
+        $(document).ready(function () { $('#loader').modal('hide'); });
+        $(window).on('pageshow', function () { $('#loader').modal('hide'); });
+        function back() { $("#loader").modal("toggle"); window.history.back(); }
+        function home() { $("#loader").modal("toggle"); location.href = 'Dashboard'; }
+    </script>
+</head>
+
+<title>BRF62</title>
+
+<body>
+<div class="container-fluid" style="padding-left:0px; padding-right:0px;">
+    <div class="row">
+
+        <div th:insert="HeaderMenu :: header"></div>
+
+        <div class="card" style="width:100%;">
+
+            <!-- Card Header -->
+            <div class="card-header"
+                 style="background-color: rgb(107, 122, 143);
+                        display: flex; align-items: center;
+                        justify-content: space-between;">
+                <div style="display: flex; align-items: center;" onclick="back();">
+                    <div class="left-arrow-circle">
+                        <i class="fa fa-arrow-left"></i>
+                    </div>
+                    <h2 style="font-family: arial; font-size: 18px;
+                               padding-top: 10px; padding-right: 8px;
+                               font-weight: bold; color: white;">
+                        BANKING AND MONETARY STATISTICS - LEGAL STATUS OF LOANS TO INDIVIDUALS - BRF 62 (AED 000)
+                    </h2>
+                    <div class="boards">
+                        <p class="scrolling-text">BANKING AND MONETARY STATISTICS - LEGAL STATUS OF LOANS TO INDIVIDUALS - BRF 62 (AED 000)</p>
+                    </div>
+                </div>
+                <div style="display: flex; color: white; font-weight: bold; align-items: center;">
+                    <span class="white-text" style="color: white !important; font-size: 16px; margin-right: 20px;">
+                        Report Date: <span th:text="${todate}"></span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Table -->
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="scrollable-table-container">
+                        <table class="table table-bordered table-hover table-sm table-condensed"
+                               style="width: 100%; font-family: Arial; font-size: 13px;">
+
+                            <thead>
+                                <tr class="header-row">
+                                    <th rowspan="2" style="width:40px;"></th>
+                                    <th rowspan="2">Product</th>
+                                    <th colspan="2">All Loans to Individuals</th>
+                                    <th colspan="2">Past Due Loans</th>
+                                    <th colspan="2">Suit Filed Cases</th>
+                                    <th colspan="2">Borrowers in Jail</th>
+                                    <th colspan="2">Absconding (Skipped) Borrowers</th>
+                                </tr>
+                                <tr class="header-row">
+                                    <th>Number</th><th>Bal O/S</th>
+                                    <th>Number</th><th>Bal O/S</th>
+                                    <th>Number</th><th>Bal O/S</th>
+                                    <th>Number</th><th>Bal O/S</th>
+                                    <th>Number</th><th>Bal O/S</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                <!-- UAE Nationals Header Row -->
+                                <tr class="header-row">
+                                    <td>1</td>
+					<td><input class="display-input" type="text" value="UAE Nationals" style="text-align:left; font-weight:bold;" readonly/></td>
+                                     <td><input class="display-input" type="text" th:value="${brf62.r9AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r9AbscondBal}" readonly/></td>
+                                    </tr>
+
+                                <!-- 1.1 -->
+                                <tr class="sub-row">
+                                    <td>1.1</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r10AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.2 -->
+                                <tr class="sub-row">
+                                    <td>1.2</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r11AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.3 -->
+                                <tr class="sub-row">
+                                    <td>1.3</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r12AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.4 -->
+                                <tr class="sub-row">
+                                    <td>1.4</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r13AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.5 -->
+                                <tr class="sub-row">
+                                    <td>1.5</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r14AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.6 -->
+                                <tr class="sub-row">
+                                    <td>1.6</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r15AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.7 -->
+                                <tr class="sub-row">
+                                    <td>1.7</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r16AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.8 -->
+                                <tr class="sub-row">
+                                    <td>1.8</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r17AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 1.9 -->
+                                <tr class="sub-row">
+                                    <td>1.9</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r18AbscondBal}" readonly/></td>
+                                </tr>
+
+								
+								
+								<!-- non-UAE Nationals Header Row -->
+								                                <tr class="header-row">
+								                                    <td>2</td>
+													<td><input class="display-input" type="text" value="Non-UAE Nationals" style="text-align:left; font-weight:bold;" readonly/></td>
+								                                     <td><input class="display-input" type="text" th:value="${brf62.r19AllLoansNo}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19AllLoansBal}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19PastDueNo}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19PastDueBal}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19SuitFiledNo}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19SuitFiledBal}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19JailNo}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19JailBal}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19AbscondNo}" readonly/></td>
+								                                    <td><input class="display-input" type="text" th:value="${brf62.r19AbscondBal}" readonly/></td>
+								                                    </tr>
+								
+
+                                <!-- 2.1 -->
+                                <tr class="sub-row">
+                                    <td>2.1</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r20AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 2.2 -->
+                                <tr class="sub-row">
+                                    <td>2.2</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r21AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 2.3 -->
+                                <tr class="sub-row">
+                                    <td>2.3</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r22AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <!-- 2.4 -->
+                                <tr class="sub-row">
+                                    <td>2.4</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r23AbscondBal}" readonly/></td>
+                                </tr>
+
+                                <tr class="sub-row">
+                                    <td>2.5</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r24AbscondBal}" readonly/></td>
+                                 </tr>
+								<tr class="sub-row">
+                                    <td>2.6</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r25AbscondBal}" readonly/></td>
+                                </tr>
+								<tr class="sub-row">
+				 					<td>2.7</td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r26AbscondBal}" readonly/></td>
+                                </tr>
+								<tr class="sub-row">
+				 					<td>2.8</td>
+
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27Product}" style="text-align:left;" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r27AbscondBal}" readonly/></td>
+								</tr>
+                <!-- Total Row -->
+                                <tr class="header-row">
+                                    <td>3</td>
+									<td><input class="display-input" type="text" value="Total" style="text-align:left; font-weight:bold;" readonly/></td>
+                                     <td><input class="display-input" type="text" th:value="${brf62.r28AllLoansNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28AllLoansBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28PastDueNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28PastDueBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28SuitFiledNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28SuitFiledBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28JailNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28JailBal}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28AbscondNo}" readonly/></td>
+                                    <td><input class="display-input" type="text" th:value="${brf62.r28AbscondBal}" readonly/></td>
+                                 </tr>
+
+                                                  
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+</body>
+</html>
