@@ -1,26 +1,13 @@
 package com.bornfire.brf.controllers;
 
 import java.io.File;
-
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-
-import javax.persistence.EntityManager;
-import javax.persistence.ParameterMode;
-import javax.persistence.PersistenceContext;
-import javax.persistence.StoredProcedureQuery;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,32 +16,28 @@ import org.hibernate.SessionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.propertyeditors.CustomDateEditor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.WebDataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.bornfire.brf.entities.AccessAndRoles;
 import com.bornfire.brf.entities.AccessandRolesRepository;
-import com.bornfire.brf.entities.CBUAE_BRF1_1_DETAIL_ENTITY;
 import com.bornfire.brf.entities.CBUAE_BRF1_1_DETAIL_Repo;
+import com.bornfire.brf.entities.CBUAE_BRFValidationsRepo;
+import com.bornfire.brf.entities.Employee;
 import com.bornfire.brf.entities.RRReport;
+import com.bornfire.brf.entities.RRReportRepo;
 import com.bornfire.brf.entities.RT_BankNameMaster;
 import com.bornfire.brf.entities.RT_BankNameMasterRepository;
 import com.bornfire.brf.entities.RT_CountryRiskDropdown;
@@ -69,13 +52,16 @@ import com.bornfire.brf.entities.STD_Demo_Entity;
 import com.bornfire.brf.entities.STD_Demo_Repo;
 import com.bornfire.brf.entities.UserProfile;
 import com.bornfire.brf.entities.UserProfileRep;
+
 import com.bornfire.brf.entities.RRReportRepo;
 import com.bornfire.brf.entities.CBUAE_BRFValidationsRepo;
 import com.bornfire.brf.entities.BRF_62_Summary_Entity;
 import com.bornfire.brf.entities.BRF_62_Summary_Repo;
 
 
+
 import com.bornfire.brf.services.AccessAndRolesServices;
+import com.bornfire.brf.services.EmployeeService;
 import com.bornfire.brf.services.LoginServices;
 import com.bornfire.brf.services.NostroAccBalDataService;
 import com.bornfire.brf.services.RT_DataControlService;
@@ -83,6 +69,8 @@ import com.bornfire.brf.services.Request_code_mapping_service;
 import com.bornfire.brf.services.crud_operations;
 
 
+import com.bornfire.brf.services.BRF62_Service;
+import org.springframework.web.bind.annotation.PathVariable;
 import com.bornfire.brf.services.EmployeeReportService;
 import com.bornfire.brf.entities.EmployeeReport;
 @Controller
@@ -146,11 +134,17 @@ public class NavigationController {
 	Request_code_mapping_service request_code_mapping_service;
 	
 	@Autowired
-	BRF_62_Summary_Repo brf62SummaryRepo;
+	BRF62_Service brf62service;
 	
 	@Autowired
 	EmployeeReportService service;
 
+	@Autowired
+	EmployeeController EmployeeController;
+	
+	@Autowired
+	EmployeeService EmployeeService;
+	
 	private String pagesize;
 
 	public String getPagesize() {
@@ -297,6 +291,49 @@ public class NavigationController {
 		return "Userprofile";
 	}
 
+	
+	@RequestMapping(value = "employee", method = { RequestMethod.GET, RequestMethod.POST })
+	public String employee(@RequestParam(required = false) String formmode,
+			@RequestParam(required = false) Long userid,
+			@RequestParam(value = "page", required = false) Optional<Integer> page,
+			@RequestParam(value = "size", required = false) Optional<Integer> size, Model md,
+			HttpServletRequest req) {
+
+	
+		md.addAttribute("RuleIDType", accessandrolesrepository.roleidtype());
+
+		
+		if (formmode == null || formmode.equals("list")) {
+
+			md.addAttribute("formmode", "list");// to set which form - valid values are "edit" , "add" & "list"
+			
+			List<Employee> employee = EmployeeController.getEmployees();
+			
+			md.addAttribute("employeelist", employee);
+
+		} else if (formmode.equals("edit")) {
+
+			md.addAttribute("formmode", formmode);
+			Employee employee = EmployeeService.getUser(userid);
+		
+			md.addAttribute("employeeData", employee);
+
+
+		} else if (formmode.equals("add")) {
+			md.addAttribute("formmode", formmode);
+			
+		}  else {
+
+			md.addAttribute("formmode", formmode);
+			md.addAttribute("FinUserProfiles", loginServices.getFinUsersList());
+			md.addAttribute("userProfile", loginServices.getUser(""));
+
+		}
+
+		return "employee";
+	}
+	
+	
 	@GetMapping("/getRoleDetails")
 	@ResponseBody
 	public AccessAndRoles getRoleDetails(@RequestParam String roleId) {
@@ -609,50 +646,9 @@ public class NavigationController {
 	    
 	    
 	}
-	@GetMapping("/BRF62")
-	public String brf62(Model model){
-
-	    List<BRF_62_Summary_Entity> list = brf62SummaryRepo.findAll();
-
-	    model.addAttribute("brf62list", list);
-
-	    return "BRF62_LIST";
-	}
-
-	@GetMapping("/BRF62/add")
-	public String addReport(Model model){
-
-	    model.addAttribute("brf62", new BRF_62_Summary_Entity());
-
-	    return "BRF62_FORM";
-	}
-
-
-	@PostMapping("/BRF62/save")
-	public String saveReport(@ModelAttribute BRF_62_Summary_Entity brf62){
-
-	    brf62SummaryRepo.save(brf62);
-
-	    return "redirect:/BRF62";
-	}
-	@GetMapping("/BRF62/delete/{id}")
-	public String deleteReport(@PathVariable("id") String id){
-
-	brf62SummaryRepo.deleteById(id);
-
-	return "redirect:/BRF62";
-
-	}
-	@GetMapping("/BRF62/view/{id}")
-	public String viewBRF62(@PathVariable("id") String id, Model model){
-
-	BRF_62_Summary_Entity data = brf62SummaryRepo.findById(id).orElse(null);
-
-	model.addAttribute("report", data);
-
-	return "BRF62_VIEW";
-
-	}
+	
+	
+	
 	
 	// EMPLOYEE_REPORT
 	@GetMapping("/employee/list")
@@ -694,6 +690,18 @@ public class NavigationController {
 	    model.addAttribute("employee", emp);
 
 	    return "employee_edit";
+	}
+	
+	
+	//BRF_62_Report 
+	
+	@GetMapping("/Reports/BRF_62")
+	public String BRF_62(@RequestParam String todate, Model model) {
+
+	    model.addAttribute("brf62", brf62service.getReport()); 
+	    model.addAttribute("todate", todate);
+
+	    return "brf62"; 
 	}
 	
 	
