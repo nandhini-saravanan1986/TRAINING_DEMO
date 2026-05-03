@@ -1,0 +1,214 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-4.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}">
+<link rel="stylesheet" type="text/css"
+	th:href="@{/webjars/datatables/1.10.19/css/jquery.dataTables.min.css}">
+<link rel="stylesheet" th:href="@{/css/CustomButton.css}" />
+
+<script th:src="@{/webjars/jquery/3.4.1/jquery.min.js}"></script>
+<script th:src="@{/webjars/popper.js/1.14.7/umd/popper.min.js}"></script>
+<script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+<script th:src="@{/webjars/datatables/1.10.19/js/jquery.dataTables.min.js}"></script>
+<script th:src="@{/webjars/datatables/1.10.19/js/dataTables.bootstrap4.min.js}"></script>
+
+<title>ROSHAN - Employee</title>
+
+<script>
+	function home() {
+		location.href = "/BCDRS/Dashboard";
+	}
+	function back() {
+		window.history.back();
+	}
+	function showAddForm() {
+		location.href = "/BCDRS/empForm";
+	}
+	function showList() {
+		location.href = "/BCDRS/employeeDetails";
+	}
+
+	$(document).ready(function() {
+		$('#employeetable').DataTable({
+			pageLength : 10,
+			lengthChange : false,
+			searching : true,
+			paging : true,
+			ordering : false,
+			
+		});
+	});
+</script>
+</head>
+
+<title>BCDRS</title>
+<body>
+	<div class="container-fluid">
+		<div class="row">
+			<div th:insert="HeaderMenu :: header"></div>
+			<div class="col-sm-12">
+
+				<!-- LIST VIEW -->
+				<div th:if="${formmode} == 'list'">
+					<div class="card">
+						<div class="card-header d-flex justify-content-between align-items-center"
+							style="background-color: rgb(107, 122, 143);">
+							<h5 style="margin: 0; font-weight: bold; color: white;">
+								Employee Management - ROSHAN</h5>
+							<button type="button" class="custom-tab-btn"
+								onclick="showAddForm();">
+								<i class="fa fa-plus"></i> Add Employee
+							</button>
+						</div>
+
+						<div class="row">
+							<div class="col-sm-12">
+								<table class="table table-striped table-bordered table-hover"
+									id="employeetable">
+									<thead style="background-color: #e9ecf0; font-family: Arial;">
+										<tr>
+											<th>ID</th>
+											<th>Name</th>
+											<th>Salary</th>
+											<th style="text-align: center;">Actions</th>
+										</tr>
+									</thead>
+									<tbody style="font-family: Arial;">
+										<tr th:each="emp : ${employees}" th:id="'row-' + ${emp.id}">
+											<td th:text="${emp.id}"></td>
+											<td th:text="${emp.name}"></td>
+											<td th:text="${emp.salary}"></td>
+											<td style="text-align: center;">
+												<a href="#" th:onclick="'showEditForm(' + ${emp.id} + '); return false;'">
+												    <i class="fa fa-edit" style="color: blue; cursor: pointer;"></i>
+												</a>
+												&nbsp;
+												<a href="#" th:onclick="'deleteEmp(' + ${emp.id} + '); return false;'">
+												    <i class="fa fa-trash" style="color: red; cursor: pointer;"></i>
+												</a>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+
+								<div class="card-footer text-center" style="background-color: white;">
+									<button type="button" class="custom-tab-btn" onclick="home();">Home</button>
+									<button type="button" class="custom-tab-btn" onclick="back();">Back</button>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ADD FORM -->
+				<div th:if="${formmode} == 'add'" style="padding: 20px;">
+					<div class="card shadow-sm">
+						<div class="card-header" style="background-color: rgb(107, 122, 143);">
+							<h4 style="margin: 0; font-weight: bold; color: white;">Employee - Add</h4>
+						</div>
+						<div class="card-body">
+							<form id="empForm" th:action="@{/empSave}" method="post" th:object="${employee}">
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">ID <span style="color: red">*</span></label>
+									<div class="col-sm-4">
+										<input type="number" th:field="*{id}" class="form-control form-control-sm" required />
+									</div>
+								</div>
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">Name <span style="color: red">*</span></label>
+									<div class="col-sm-4">
+										<input type="text" th:field="*{name}" class="form-control form-control-sm" placeholder="Enter name" required />
+									</div>
+								</div>
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">Salary <span style="color: red">*</span></label>
+									<div class="col-sm-4">
+										<input type="text" th:field="*{salary}" class="form-control form-control-sm" placeholder="Enter salary" required />
+									</div>
+								</div>
+							</form>
+						</div>
+						<div class="card-footer text-center">
+							<button type="button" class="custom-tab-btn" onclick="home();">Home</button>
+							<button type="submit" form="empForm" class="custom-tab-btn">Submit</button>
+							<button type="button" class="custom-tab-btn" onclick="showList();">Cancel</button>
+						</div>
+					</div>
+				</div>
+
+				<!-- EDIT FORM -->
+				<div th:if="${formmode} == 'edit'" style="padding: 20px;">
+					<div class="card shadow-sm">
+						<div class="card-header" style="background-color: rgb(107, 122, 143);">
+							<h4 style="margin: 0; font-weight: bold; color: white;">Employee - Edit</h4>
+						</div>
+						<div class="card-body">
+							<form id="empForm" th:action="@{/empUpdate/{id}(id=${employee.id})}" method="post" th:object="${employee}">
+								<!-- hidden _method tells Spring to treat POST as PUT -->
+								
+								<input type="hidden" th:field="*{id}" />
+
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">ID</label>
+									<div class="col-sm-4">
+										<input type="text" th:value="*{id}" class="form-control form-control-sm" readonly />
+									</div>
+								</div>
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">Name <span style="color: red">*</span></label>
+									<div class="col-sm-4">
+										<input type="text" th:field="*{name}" class="form-control form-control-sm" required />
+									</div>
+								</div>
+								<div class="row mb-3 align-items-center">
+									<label class="col-sm-2 col-form-label">Salary <span style="color: red">*</span></label>
+									<div class="col-sm-4">
+										<input type="text" th:field="*{salary}" class="form-control form-control-sm" required />
+									</div>
+								</div>
+							</form>
+						</div>
+						<div class="card-footer text-center">
+							<button type="button" class="custom-tab-btn" onclick="home();">Home</button>
+							<button type="submit" form="empForm" class="custom-tab-btn">Submit</button>
+							<button type="button" class="custom-tab-btn" onclick="showList();">Cancel</button>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<script>
+	function showEditForm(id) {
+	    location.href = "/BCDRS/empForm/" + id;
+	}
+
+	function deleteEmp(id) {
+		if(confirm("Are you sure you want to delete this employee?")) {
+			fetch("/BCDRS/empDelete/" + id, {
+                method: "DELETE"
+            })
+         	.then(response => response.text())
+         	.then(data => {
+         		if (data === "success") {
+                    document.getElementById("row-" + id).remove();
+                    alert("Employee deleted successfully!");
+                } else {
+                    alert("Delete failed!");
+                }
+         	})
+         	.catch(error => alert("Error: " + error));
+		}
+	}
+	</script>
+</body>
+</html>

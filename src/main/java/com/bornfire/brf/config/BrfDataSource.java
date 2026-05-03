@@ -9,6 +9,7 @@ import javax.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.orm.hibernate5.LocalSessionFactoryBean;
 import org.springframework.orm.jpa.JpaTransactionManager;
@@ -20,65 +21,62 @@ import oracle.jdbc.pool.OracleDataSource;
 @Configuration
 @EnableTransactionManagement
 @ConfigurationProperties("datasrc")
-@EnableJpaRepositories(basePackages = "com.bornfire.brf.entities", entityManagerFactoryRef = "datasrc", transactionManagerRef = "datasrcTransactionManager")
+@EnableJpaRepositories(
+    basePackages = {
+        "com.bornfire.brf.entities",
+        "roshan.repo"              // ← ADD THIS: tells Spring Data JPA to create Roshanjpa bean
+    },
+    entityManagerFactoryRef = "datasrc",
+    transactionManagerRef = "datasrcTransactionManager"
+)
 public class BrfDataSource {
 
-	@NotNull
-	private String username;
-	@NotNull
-	private String password;
-	@NotNull
-	private String url;
+    @NotNull
+    private String username;
+    @NotNull
+    private String password;
+    @NotNull
+    private String url;
 
-	public void setUsername(String username) {
-		this.username = username;
-	}
+    public void setUsername(String username) { this.username = username; }
+    public void setPassword(String password) { this.password = password; }
+    public void setUrl(String url)           { this.url = url; }
 
-	public void setPassword(String password) {
-		this.password = password;
-	}
-
-	public void setUrl(String url) {
-		this.url = url;
-	}
-
-	
-	@Bean
+    @Primary
+    @Bean
     public LocalSessionFactoryBean datasrc() throws SQLException {
         LocalSessionFactoryBean sessionFactory = new LocalSessionFactoryBean();
         sessionFactory.setDataSource(srcdataSource());
-        sessionFactory.setPackagesToScan("com.bornfire.brf.entities");
+        sessionFactory.setPackagesToScan(
+            "com.bornfire.brf.entities",
+            "roshan.entities"      // ← ADD THIS: tells Hibernate to register Roshanent as managed type
+        );
         sessionFactory.setHibernateProperties(hibernateProperties());
- 
         return sessionFactory;
     }
-	
-	private final Properties hibernateProperties() {
-        Properties hibernateProperties = new Properties();       
+
+    private final Properties hibernateProperties() {
+        Properties hibernateProperties = new Properties();
         hibernateProperties.setProperty(
-          "hibernate.dialect", "org.hibernate.dialect.Oracle10gDialect");
+            "hibernate.dialect", "org.hibernate.dialect.Oracle10gDialect");
         return hibernateProperties;
     }
-	
 
-	@Bean
-	DataSource srcdataSource() throws SQLException {
-		OracleDataSource dataSource = new OracleDataSource();
-		dataSource.setUser(username);
-		dataSource.setPassword(password);
-		dataSource.setURL(url);
-		dataSource.setImplicitCachingEnabled(true);
-		//dataSource.setFastConnectionFailoverEnabled(true);
-		return dataSource;
-	}
+    @Bean
+    DataSource srcdataSource() throws SQLException {
+        OracleDataSource dataSource = new OracleDataSource();
+        dataSource.setUser(username);
+        dataSource.setPassword(password);
+        dataSource.setURL(url);
+        dataSource.setImplicitCachingEnabled(true);
+        return dataSource;
+    }
 
-	@Bean
-	public PlatformTransactionManager datasrcTransactionManager() throws SQLException {
-
-		JpaTransactionManager transactionManager = new JpaTransactionManager();
-		transactionManager.setEntityManagerFactory(datasrc().getObject());
-		return transactionManager;
-	}
-	
-
+    @Primary
+    @Bean
+    public PlatformTransactionManager datasrcTransactionManager() throws SQLException {
+        JpaTransactionManager transactionManager = new JpaTransactionManager();
+        transactionManager.setEntityManagerFactory(datasrc().getObject());
+        return transactionManager;
+    }
 }

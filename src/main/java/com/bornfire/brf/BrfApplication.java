@@ -8,7 +8,10 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {
+	    "com.bornfire.brf",
+	    "roshan"
+	})
 @EnableJpaRepositories(basePackages = "com.bornfire.xbrl.repositories")
 @Configuration
 @EnableScheduling

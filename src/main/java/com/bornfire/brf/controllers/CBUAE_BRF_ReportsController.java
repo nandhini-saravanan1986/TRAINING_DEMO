@@ -1,6 +1,8 @@
 package com.bornfire.brf.controllers;
 
 import java.io.FileNotFoundException;
+import com.bornfire.brf.services.BRF_052_ReportService;
+
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -40,6 +42,7 @@ import com.bornfire.brf.entities.M_IS_Summary_Entity2;
 import com.bornfire.brf.services.BRF_67_ReportService;
 import com.bornfire.brf.services.BRRS_M_IS_ReportService;
 import com.bornfire.brf.services.RegulatoryReportServices;
+import com.bornfire.brf.services.BRF_008_A_ReportService;
 
 
 @Controller
@@ -56,7 +59,11 @@ public class CBUAE_BRF_ReportsController {
 	
 		@Autowired
 		BRRS_M_IS_ReportService M_IS_Service;
+		@Autowired
+		BRF_008_A_ReportService BRF_008_A_reportservice;
 		private String pagesize;
+		@Autowired
+	    BRF_052_ReportService BRF_052_reportservice;
 	
 		public String getPagesize() {
 			return pagesize;
@@ -66,8 +73,477 @@ public class CBUAE_BRF_ReportsController {
 			this.pagesize = pagesize;
 		}
 		DateFormat dateFormat = new SimpleDateFormat("dd-MMM-yyyy");
-	
-		@RequestMapping(value = "{reportid}", method = { RequestMethod.GET, RequestMethod.POST })
+
+		// ─────────────────────────────────────────────────────────────────────
+		// BRF_008_A DETAIL EDIT — save changes for a single detail record
+		// ─────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_008_A/editDetail", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseEntity<String> editBRF008ADetail(
+		        @RequestParam("custId")               String custId,
+		        @RequestParam("acctNumber")            String acctNumber,
+		        @RequestParam("acctName")              String acctName,
+		        @RequestParam("dataType")              String dataType,
+		        @RequestParam("rowId")                 String rowId,
+		        @RequestParam("columnId")              String columnId,
+		        @RequestParam("amountAed")             BigDecimal amountAed,
+		        @RequestParam("reportRemarks")         String reportRemarks,
+		        @RequestParam("modificationRemarks")   String modificationRemarks,
+		        @RequestParam("dataEntryVersion")      String dataEntryVersion,
+		        @RequestParam("reportDate")            String reportDate,
+		        HttpServletRequest req) {
+
+		    String userId = (String) req.getSession().getAttribute("USERID");
+		    logger.info("BRF_008_A editDetail called — custId={} by user={}", custId, userId);
+		    try {
+		        String result = BRF_008_A_reportservice.updateDetailRecord(
+		                custId, acctNumber, acctName, dataType, rowId, columnId,
+		                amountAed, reportRemarks, modificationRemarks,
+		                dataEntryVersion, reportDate, userId);
+		        return ResponseEntity.ok(result);
+		    } catch (Exception e) {
+		        logger.error("BRF_008_A editDetail ERROR for custId={}", custId, e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                .body("Update failed: " + e.getMessage());
+		    }
+		}
+
+		// ─────────────────────────────────────────────────────────────────────
+		// BRF_008_A DETAIL DOWNLOAD — uses source temp (template) approach
+		// ─────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_008_A/downloadDetail", method = RequestMethod.GET)
+		@ResponseBody
+		public ResponseEntity<ByteArrayResource> downloadBRF008ADetail(
+		        HttpServletResponse response,
+		        @RequestParam("todate")   String todate,
+		        @RequestParam("fromdate") String fromdate) {
+
+		    response.setContentType("application/octet-stream");
+
+		    System.out.println("BRF_008_A downloadDetail called — todate=" + todate + " fromdate=" + fromdate);
+
+		    try {
+		        // dates arrive as dd/MM/yyyy from the detail page — convert to dd-MMM-yyyy
+		        try {
+		            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+		            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+		        } catch (ParseException e) {
+		            // already in dd-MMM-yyyy format — leave as-is
+		            System.out.println("Date already converted, keeping as-is: " + todate);
+		        }
+
+		        // Pass template filename for source temp approach
+		        byte[] excelData = BRF_008_A_reportservice.BRF_008_A_DetailExcel("BRF_008_A_Detail.xlsx", fromdate, todate);
+
+		        if (excelData == null || excelData.length == 0) {
+		            logger.warn("BRF_008_A downloadDetail: no data for date {}", todate);
+		            return ResponseEntity.noContent().build();
+		        }
+
+		        ByteArrayResource resource = new ByteArrayResource(excelData);
+		        HttpHeaders headers = new HttpHeaders();
+		        headers.add(HttpHeaders.CONTENT_DISPOSITION,
+		                    "attachment; filename=BRF_008_A_Detail.xlsx");
+
+		        return ResponseEntity.ok()
+		                .headers(headers)
+		                .contentLength(excelData.length)
+		                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+		                .body(resource);
+
+		    } catch (Exception e) {
+		        logger.error("BRF_008_A downloadDetail ERROR", e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		    }
+		}
+
+		// ─────────────────────────────────────────────────────────────────────
+		// BRF_008_A SUMMARY DOWNLOAD — uses source temp (template) approach
+		// ─────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_008_A/downloadSummary", method = RequestMethod.GET)
+		@ResponseBody
+		public ResponseEntity<ByteArrayResource> downloadBRF008ASummary(
+		        HttpServletResponse response,
+		        @RequestParam("todate")   String todate,
+		        @RequestParam("fromdate") String fromdate) {
+
+		    response.setContentType("application/octet-stream");
+		    try {
+		        try {
+		            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+		            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+		        } catch (ParseException e) {
+		            System.out.println("Date already converted: " + todate);
+		        }
+
+		        // Pass template filename for source temp approach
+		        byte[] excelData = BRF_008_A_reportservice.BRF_008_A_Excel(
+		                "BRF_008_A.xlsx", "BRF_008_A", fromdate, todate, null, null);
+
+		        if (excelData == null || excelData.length == 0)
+		            return ResponseEntity.noContent().build();
+
+		        HttpHeaders headers = new HttpHeaders();
+		        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=BRF_008_A.xlsx");
+		        return ResponseEntity.ok().headers(headers).contentLength(excelData.length)
+		                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+		                .body(new ByteArrayResource(excelData));
+
+		    } catch (Exception e) {
+		        logger.error("BRF_008_A downloadSummary ERROR", e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		    }
+		}
+		
+		// ─────────────────────────────────────────────────────────────────────────
+	    // BRF_052 SUMMARY EXCEL DOWNLOAD — Source Temp (Template) Approach
+	    // Called by: downloadSummaryExcel() in BRF_052.html
+	    //   URL: /BCDRS/Reports/BRF_052/downloadSummary?fromdate=...&todate=...
+	    // ─────────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_052/downloadSummary", method = RequestMethod.GET)
+	    @ResponseBody
+	    public ResponseEntity<ByteArrayResource> downloadBRF052Summary(
+	            HttpServletResponse response,
+	            @RequestParam("todate")   String todate,
+	            @RequestParam("fromdate") String fromdate) {
+
+	        response.setContentType("application/octet-stream");
+	        logger.info("BRF_052 downloadSummary called — todate={} fromdate={}", todate, fromdate);
+
+	        try {
+	            // Dates arrive as dd/MM/yyyy from the page — convert to dd-MMM-yyyy
+	            // (the service's dateformat expects dd-MMM-yyyy)
+	            try {
+	                fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+	                todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+	            } catch (ParseException e) {
+	                // Already in dd-MMM-yyyy — leave as-is
+	                logger.info("BRF_052 downloadSummary: dates already converted, keeping as-is: {}", todate);
+	            }
+
+	            byte[] excelData = BRF_052_reportservice.BRF_052_Excel(
+	                    "BRF_052.xlsx",   // template filename in exportpathtemp directory
+	                    "BRF_052",        // reportId
+	                    fromdate,
+	                    todate,
+	                    null,             // currency — not used by this report
+	                    null);            // dtltype  — not used by this report
+
+	            if (excelData == null || excelData.length == 0) {
+	                logger.warn("BRF_052 downloadSummary: no data for date {}", todate);
+	                return ResponseEntity.noContent().build();
+	            }
+
+	            HttpHeaders headers = new HttpHeaders();
+	            headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=BRF_052.xlsx");
+
+	            logger.info("BRF_052 downloadSummary: sending {} bytes", excelData.length);
+	            return ResponseEntity.ok()
+	                    .headers(headers)
+	                    .contentLength(excelData.length)
+	                    .contentType(MediaType.parseMediaType(
+	                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+	                    .body(new ByteArrayResource(excelData));
+
+	        } catch (Exception e) {
+	            logger.error("BRF_052 downloadSummary ERROR", e);
+	            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+	        }
+	    }
+		// ─────────────────────────────────────────────────────────────────────
+		// BRF_052 DETAIL EDIT — save changes for a single detail record
+		// ─────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_052/editDetail", method = RequestMethod.POST)
+		@ResponseBody
+		public ResponseEntity<String> editBRF052Detail(
+		        @RequestParam("custId")          String custId,
+		        @RequestParam("acctNumber")      String acctNumber,
+		        @RequestParam("acctName")        String acctName,
+		        @RequestParam("rowId")           String rowId,
+		        @RequestParam("columnId")        String columnId,
+		        @RequestParam("amountAed")       BigDecimal amountAed,
+		        @RequestParam("reportRemarks")   String reportRemarks,
+		        @RequestParam("reportDate")      String reportDate,
+		        HttpServletRequest req) {
+
+		    String userId = (String) req.getSession().getAttribute("USERID");
+		    logger.info("BRF_052 editDetail called — custId={} by user={}", custId, userId);
+		    try {
+		        String result = BRF_052_reportservice.updateDetailRecord(
+		                custId, acctNumber, acctName, rowId, columnId,
+		                amountAed, reportRemarks, reportDate, userId);
+		        return ResponseEntity.ok(result);
+		    } catch (Exception e) {
+		        logger.error("BRF_052 editDetail ERROR for custId={}", custId, e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+		                .body("Update failed: " + e.getMessage());
+		    }
+		}
+		// ─────────────────────────────────────────────────────────────────────
+        // BRF_052 GENERATE REPORT — Runs BRF_052_P stored procedure to refresh
+        // summary tables from current detail data.
+        // URL: POST /BCDRS/Reports/BRF_052/generateReport?todate=...
+        // ─────────────────────────────────────────────────────────────────────
+        @RequestMapping(value = "BRF_052/generateReport", method = RequestMethod.POST)
+        @ResponseBody
+        public ResponseEntity<String> generateBRF052Report(
+                @RequestParam("todate") String todate,
+                HttpServletRequest req) {
+
+            String userId = (String) req.getSession().getAttribute("USERID");
+            logger.info("BRF_052 generateReport called — todate={} by user={}", todate, userId);
+            try {
+                String result = BRF_052_reportservice.generateSummary(todate);
+                return ResponseEntity.ok(result);
+            } catch (Exception e) {
+                logger.error("BRF_052 generateReport ERROR for todate={}", todate, e);
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("Failed to generate report: " + e.getMessage());
+            }
+        }
+		// ─────────────────────────────────────────────────────────────────────────
+		// BRF_052 DETAIL EXCEL DOWNLOAD
+		// Called by: downloadDetailExcel() in BRF_052.html
+		//   URL: /BCDRS/Reports/BRF_052/downloadDetail?fromdate=...&todate=...
+		// ─────────────────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_052/downloadDetail", method = RequestMethod.GET)
+		@ResponseBody
+		public ResponseEntity<ByteArrayResource> downloadBRF052Detail(
+		        HttpServletResponse response,
+		        @RequestParam("todate")   String todate,
+		        @RequestParam("fromdate") String fromdate) {
+
+		    response.setContentType("application/octet-stream");
+		    logger.info("BRF_052 downloadDetail called — todate={} fromdate={}", todate, fromdate);
+
+		    try {
+		        try {
+		            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+		            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+		        } catch (ParseException e) {
+		            logger.info("BRF_052 downloadDetail: dates already converted: {}", todate);
+		        }
+
+		        byte[] excelData = BRF_052_reportservice.BRF_052_DetailExcel("BRF_052_Detail.xlsx", fromdate, todate);
+
+		        if (excelData == null || excelData.length == 0) {
+		            logger.warn("BRF_052 downloadDetail: no data for date {}", todate);
+		            return ResponseEntity.noContent().build();
+		        }
+
+		        HttpHeaders headers = new HttpHeaders();
+		        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=BRF_052_Detail.xlsx");
+
+		        return ResponseEntity.ok()
+		                .headers(headers)
+		                .contentLength(excelData.length)
+		                .contentType(MediaType.parseMediaType(
+		                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+		                .body(new ByteArrayResource(excelData));
+
+		    } catch (Exception e) {
+		        logger.error("BRF_052 downloadDetail ERROR", e);
+		        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+		    }
+		}
+		
+		// ─────────────────────────────────────────────────────────────
+		// BRF_052 SUMMARY PDF DOWNLOAD — centralized (same as BRF_008)
+		// ─────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_052/downloadSummaryPdf", method = RequestMethod.GET)
+		public void downloadBRF052SummaryPdf(
+		        HttpServletResponse response,
+		        @RequestParam("todate")   String todate,
+		        @RequestParam("fromdate") String fromdate) {
+
+		    logger.info("BRF_052 downloadSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+
+		    try {
+		        // Convert dates from dd/MM/yyyy → dd-MMM-yyyy
+		        try {
+		            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+		            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+		        } catch (ParseException e) {
+		            logger.info("BRF_052 downloadSummaryPdf: dates already converted, keeping as-is: {}", todate);
+		        }
+
+		        // Step 1: Get PDF bytes via centralized service
+		        byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+		                "BRF_052",           // reportId (must match switch-case)
+		                "BRF_052.xlsx",      // template filename
+		                null,                // asondate
+		                fromdate,
+		                todate,
+		                "AED",               // currency
+		                null,                // subreportid
+		                null,                // secid
+		                null,                // dtltype
+		                null,                // reportingTime
+		                null,                // instancecode
+		                null                 // filter
+		        );
+
+		        if (pdfBytes == null || pdfBytes.length == 0) {
+		            logger.warn("BRF_052 downloadSummaryPdf: no data / PDF generation returned empty");
+		            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+		            return;
+		        }
+
+		        // Step 2: Stream PDF to browser
+		        response.setContentType("application/pdf");
+		        response.setHeader("Content-Disposition", "attachment; filename=\"BRF_052.pdf\"");
+		        response.setContentLength(pdfBytes.length);
+
+		        try (ServletOutputStream out = response.getOutputStream()) {
+		            out.write(pdfBytes);
+		            out.flush();
+		        }
+
+		    } catch (Exception e) {
+		        logger.error("BRF_052 downloadSummaryPdf ERROR", e);
+		        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		    }
+		}
+		// ─────────────────────────────────────────────────────────────
+		// M_IS SUMMARY PDF DOWNLOAD
+		// Generates filled Excel from M_IS.xlsx template, converts to
+		// PDF using the table-range-aware overload in Exceltopdfservice
+		// (two PdfPTables — one per table on the sheet).
+		// ─────────────────────────────────────────────────────────────
+		@RequestMapping(value = "M_IS/downloadSummaryPdf", method = RequestMethod.GET)
+		public void downloadM_ISSummaryPdf(
+		        HttpServletResponse response,
+		        @RequestParam("todate")   String todate,
+		        @RequestParam("fromdate") String fromdate) {
+
+		    logger.info("M_IS downloadSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+
+		    try {
+		        // Convert dates from dd/MM/yyyy → dd-MMM-yyyy if needed
+		        try {
+		            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+		            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+		        } catch (ParseException e) {
+		            logger.info("M_IS downloadSummaryPdf: dates already in correct format, keeping as-is: {}", todate);
+		        }
+
+		        // Step 1: Get PDF bytes via centralized service
+		        byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+		                "M_IS",        // reportId — matches case "M_IS" in getPdfDownloadFile
+		                "M_IS.xlsx",   // template filename
+		                null,          // asondate
+		                fromdate,
+		                todate,
+		                "AED",         // currency
+		                null,          // subreportid
+		                null,          // secid
+		                null,          // dtltype
+		                null,          // reportingTime
+		                null,          // instancecode
+		                null           // filter
+		        );
+
+		        if (pdfBytes == null || pdfBytes.length == 0) {
+		            logger.warn("M_IS downloadSummaryPdf: no data / PDF generation returned empty");
+		            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+		            return;
+		        }
+
+		        // Step 2: Stream PDF to browser
+		        response.setContentType("application/pdf");
+		        response.setHeader("Content-Disposition", "attachment; filename=\"M_IS.pdf\"");
+		        response.setContentLength(pdfBytes.length);
+
+		        try (ServletOutputStream out = response.getOutputStream()) {
+		            out.write(pdfBytes);
+		            out.flush();
+		        }
+
+		    } catch (Exception e) {
+		        logger.error("M_IS downloadSummaryPdf ERROR", e);
+		        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+		    }
+		}
+		// ─────────────────────────────────────────────────────────────
+		// BRF_052 DETAIL VIEW — paginated
+		// ─────────────────────────────────────────────────────────────
+		@RequestMapping(value = "BRF_052/detail", method = RequestMethod.GET)
+		public ModelAndView getBRF052Detail(
+		        @RequestParam("fromdate")                          String fromdate,
+		        @RequestParam("todate")                            String todate,
+		        @RequestParam(value = "currency",   required = false) String currency,
+		        @RequestParam(value = "dtltype",    required = false) String dtltype,
+		        @RequestParam(value = "type",       required = false) String type,
+		        @RequestParam(value = "page",       defaultValue = "0")  int page,
+		        @RequestParam(value = "size",       defaultValue = "20") int size,
+		        @RequestParam(value = "filterRowId", required = false)   String filterRowId,
+		        @RequestParam(value = "filterColId", required = false)   String filterColId) {
+
+		    logger.info("BRF_052 detail view called → todate={} fromdate={} page={} filter={}/{}",
+		            todate, fromdate, page, filterRowId, filterColId);
+
+		    return BRF_052_reportservice.getBRF052DetailView(
+		            "BRF_052", fromdate, todate, currency, dtltype, type,
+		            page, size, filterRowId, filterColId
+		    );
+		}
+		    // ─────────────────────────────────────────────────────────────────────
+	    // BRF_008_A SUMMARY PDF DOWNLOAD — generate Excel from template, then convert to PDF
+	    // ─────────────────────────────────────────────────────────────────────
+	    @RequestMapping(value = "BRF_008_A/downloadSummaryPdf", method = RequestMethod.GET)
+	    public void downloadBRF008ASummaryPdf(
+	            HttpServletResponse response,
+	            @RequestParam("todate")   String todate,
+	            @RequestParam("fromdate") String fromdate) {
+
+	        logger.info("BRF_008_A downloadSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+	        try {
+	            // Convert dates from dd/MM/yyyy → dd-MMM-yyyy (service expects dd-MMM-yyyy)
+	            try {
+	                fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+	                todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+	            } catch (ParseException e) {
+	                logger.info("BRF_008_A downloadSummaryPdf: dates already converted, keeping as-is: {}", todate);
+	            }
+
+	            // Step 1: Generate Excel bytes using the source-temp template approach
+	            byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+	                    "BRF_008_A",           // reportId — matched in switch
+	                    "BRF_008_A.xlsx",      // template filename
+	                    null,                  // asondate
+	                    fromdate,
+	                    todate,
+	                    "AED",                 // currency
+	                    null,                  // subreportid
+	                    null,                  // secid
+	                    null,                  // dtltype
+	                    null,                  // reportingTime
+	                    null,                  // instancecode
+	                    null                   // filter
+	            );
+
+	            if (pdfBytes == null || pdfBytes.length == 0) {
+	                logger.warn("BRF_008_A downloadSummaryPdf: no data / PDF generation returned empty");
+	                response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+	                return;
+	            }
+
+	            // Step 2: Stream the PDF to the browser
+	            response.setContentType("application/pdf");
+	            response.setHeader("Content-Disposition", "attachment; filename=\"BRF_008_A.pdf\"");
+	            response.setContentLength(pdfBytes.length);
+	            try (ServletOutputStream out = response.getOutputStream()) {
+	                out.write(pdfBytes);
+	                out.flush();
+	            }
+
+	        } catch (Exception e) {
+	            logger.error("BRF_008_A downloadSummaryPdf ERROR", e);
+	            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	        }
+	    }
+
+	@RequestMapping(value = "{reportid}", method = { RequestMethod.GET, RequestMethod.POST })
 		public ModelAndView reportView(@PathVariable("reportid") String reportid,
 				@RequestParam(value = "function", required = false) String function,
 				@RequestParam("asondate") String asondate, @RequestParam(required = false) String fromdate,
@@ -105,11 +581,12 @@ public class CBUAE_BRF_ReportsController {
 			// md.addAttribute("reportTitle", reportServices.getReportName(reportid));
 
 			try {
-				asondate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(asondate));
-				fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
-				todate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+			    asondate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(asondate));
+			    fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+			    todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
 			} catch (ParseException e) {
-				e.printStackTrace();
+			    // dates already in dd-MMM-yyyy — leave as-is
+			    logger.info("reportView: dates already converted, keeping as-is");
 			}
 
 			ModelAndView mv = new ModelAndView();

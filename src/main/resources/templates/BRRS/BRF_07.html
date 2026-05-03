@@ -1,0 +1,984 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-4.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>BRF 07 - LAR Report</title>
+
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}">
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/datatables/1.10.19/css/jquery.dataTables.min.css}">
+    <link rel="stylesheet" th:href="@{/css/CustomButton.css}" />
+    <link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon" />
+
+    <script th:src="@{/webjars/jquery/3.4.1/jquery.min.js}"></script>
+    <script th:src="@{/webjars/popper.js/1.14.7/umd/popper.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+    <script th:src="@{/webjars/datatables/1.10.19/js/jquery.dataTables.min.js}"></script>
+    <script th:src="@{/webjars/datatables/1.10.19/js/dataTables.bootstrap4.min.js}"></script>
+
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+        .left-arrow-circle {
+            width: 35px; height: 35px; background-color: white;
+            border-radius: 50%; display: flex; align-items: center;
+            justify-content: center; margin-right: 10px; cursor: pointer;
+        }
+        .left-arrow-circle i { color: #6b7a8f; font-size: 16px; }
+        .rpt-table { width: 100%; border-collapse: collapse; font-size: 11px; font-family: Arial; }
+        .rpt-table th, .rpt-table td { border: 1px solid #000; padding: 4px 6px; }
+        .header-title { background-color: #d3d3d3; font-weight: bold; text-align: center; padding: 8px; }
+        .info-label   { font-weight: bold; background-color: #ffffff; width: 60px; }
+        .info-value   { background-color: #ffffff; }
+        .col-header       { background-color: #d3d3d3; font-weight: bold; text-align: left;  vertical-align: bottom; }
+        .col-header-right { background-color: #d3d3d3; font-weight: bold; text-align: right; vertical-align: bottom; }
+        .dark-gray    { background-color: #808080; }
+        .item-no      { text-align: right; width: 40px; }
+        .amt-right    { text-align: right; }
+        .subtotal-row { background-color: #e0e0e0; }
+        .subtotal-amt { background-color: #e0e0e0; text-align: right; }
+        .total-row    { background-color: #d3d3d3; }
+        .red-text     { color: #cc0000; }
+        .note-label   { font-weight: bold; vertical-align: top; }
+        .custom-tab-btn {
+            background-color: #E77400; color: white; border: none;
+            padding: 6px 14px; border-radius: 4px; margin-left: 5px;
+            font-weight: bold; cursor: pointer;
+        }
+        .custom-tab-btn:hover { background-color: #c96500; }
+        #brf008aDetailTable thead th {
+            background-color: rgb(107,122,143); color: white;
+            font-weight: bold; font-size: 13px; vertical-align: middle; white-space: nowrap;
+        }
+        #brf008aDetailTable td { font-size: 13px; vertical-align: middle; }
+        .scrollable-detail { max-height: 600px; overflow-y: auto; border: 1px solid #dee2e6; }
+        .fa-edit:hover { color: #E77400 !important; }
+
+        /* ── Download split-button dropdown ─────────────── */
+        .clickable-cell {
+            cursor: pointer;
+            position: relative;
+        }
+        .clickable-cell:hover {
+            background-color: #fff3cd !important;
+            outline: 2px solid #E77400;
+            outline-offset: -2px;
+        }
+        .clickable-cell::after {
+            content: "⤵";
+            font-size: 9px;
+            color: #E77400;
+            position: absolute;
+            top: 2px;
+            right: 3px;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .clickable-cell:hover::after { opacity: 1; }
+
+        /* ── Cell-filter active badge in detail view ── */
+        .cell-filter-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: #fff3cd; border: 1px solid #E77400;
+            border-radius: 20px; padding: 4px 12px 4px 10px;
+            font-size: 12px; font-weight: bold; color: #7a4a00;
+            margin-bottom: 10px;
+        }
+        .cell-filter-badge .clear-btn {
+            background: #E77400; color: white; border: none;
+            border-radius: 50%; width: 18px; height: 18px;
+            font-size: 11px; cursor: pointer; line-height: 18px;
+            text-align: center; padding: 0;
+        }
+
+        /* Custom search bar styling */
+        .custom-search-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .custom-search-container label {
+            font-weight: bold;
+            margin-right: 8px;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        .custom-search-container input {
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 13px;
+            width: 200px;
+        }
+        /* ── Download split-button dropdown ─────────────── */
+        .dl-split-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: stretch;
+            margin-left: 5px;
+        }
+        .dl-main-btn {
+            border-radius: 4px 0 0 4px !important;
+            margin-left: 0 !important;
+            border-right: 1px solid rgba(255,255,255,0.35) !important;
+        }
+        .dl-caret-btn {
+            background-color: #E77400;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 13px;
+            line-height: 1;
+        }
+        .dl-caret-btn:hover { background-color: #c96500; }
+        .dl-dropdown-menu {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            right: 0;
+            min-width: 185px;
+            background: #ffffff;
+            border: 1px solid #cccccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+            z-index: 99999;
+            overflow: hidden;
+        }
+        .dl-dropdown-menu a {
+            display: block;
+            padding: 9px 14px;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            color: #333333;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+        .dl-dropdown-menu a:hover { background-color: #f5f5f5; color: #E77400; }
+        .dl-divider { border-top: 1px solid #e0e0e0; margin: 0; }
+    </style>
+
+    <script th:inline="javascript">
+
+        /* ── Navigate back ─────────────────────────────────────── */
+        function back() { window.history.back(); }
+
+        /* ── DETAIL button → navigate to detail view ───────────── */
+        function showdetails() {
+            $('#loader').modal('show');
+            var url = /*[[@{'/Reports/BRF_008_A/Details'(
+                asondate=${asondate}, fromdate=${fromdate}, todate=${todate},
+                currency=${currency}, dtltype=${dtltype}, type=${type}
+            )}]]*/ "";
+            location.href = url;
+        }
+
+        /* ── SUMMARY button → navigate back to summary view ────── */
+        function showsummary() {
+            $('#loader').modal('show');
+            var url = /*[[@{'/Reports/BRF_008_A'(
+                dtltype='report', fromdate=${fromdate}, todate=${todate},
+                asondate=${asondate}, currency=${currency}
+            )}]]*/ "";
+            location.href = url;
+        }
+
+        /* ── Toggle the custom download dropdown (pure vanilla JS) ── */
+        function toggleDlMenu() {
+            var menu = document.getElementById('dlDropdownMenu');
+            menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+        }
+        // Close dropdown when clicking anywhere outside the split-wrap
+        document.addEventListener('click', function(evt) {
+            var wrap = document.getElementById('dlSplitWrap');
+            if (wrap && !wrap.contains(evt.target)) {
+                var menu = document.getElementById('dlDropdownMenu');
+                if (menu) { menu.style.display = 'none'; }
+            }
+        });
+
+        /* ── DOWNLOAD summary report as EXCEL ─────────────────── */
+        function downloadSummaryExcel() {
+            var fromdate = document.getElementById('hdnFromdate').value;
+            var todate   = document.getElementById('hdnTodate').value;
+            var menu = document.getElementById('dlDropdownMenu');
+            if (menu) { menu.style.display = 'none'; }
+
+            jQuery('#loader').modal('show');
+
+            jQuery.ajax({
+                url: '/BCDRS/Reports/BRF_008_A/downloadSummary'
+                     + '?fromdate=' + encodeURIComponent(fromdate)
+                     + '&todate='   + encodeURIComponent(todate),
+                type: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function(data) {
+                    jQuery('#loader').modal('hide');
+                    if (data && data.size > 100) {
+                        var blob = new Blob([data], {
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        });
+                        var url = window.URL.createObjectURL(blob);
+                        var a   = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'BRF_008_A.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } else {
+                        alert('No data available for the selected date.');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    jQuery('#loader').modal('hide');
+                    console.error('Summary Excel download failed — HTTP ' + jqXHR.status + ' ' + errorThrown);
+                    alert('Summary Excel download failed (HTTP ' + jqXHR.status + '). Check server logs.');
+                }
+            });
+        }
+
+        /* ── DOWNLOAD summary report as PDF ───────────────────── */
+		function downloadSummaryPdf(element) {
+
+		    var fromdate = element.getAttribute('data-fromdate');
+		    var todate   = element.getAttribute('data-todate');
+
+		    $('#loader').modal('show');
+
+		    var url = '/BCDRS/Reports/BRF_008_A/downloadSummaryPdf'
+		            + '?fromdate=' + encodeURIComponent(fromdate)
+		            + '&todate='   + encodeURIComponent(todate);
+
+		    // 🔥 CRITICAL: Use direct navigation (NOT AJAX)
+		    window.location.href = url;
+
+		    setTimeout(function() {
+		        $('#loader').modal('hide');
+		    }, 2000);
+		}
+
+        /* ── DOWNLOAD detail table (dedicated endpoint) ────────── */
+        function downloadDetailExcel(button) {
+            var fromdate = button.getAttribute('data-fromdate');
+            var todate   = button.getAttribute('data-todate');
+
+            $('#loader').modal('show');
+
+            $.ajax({
+                url: '/BCDRS/Reports/BRF_008_A/downloadDetail'
+                     + '?fromdate=' + encodeURIComponent(fromdate)
+                     + '&todate='   + encodeURIComponent(todate),
+                type: 'GET',
+                xhrFields: { responseType: 'blob' },
+                success: function(data) {
+                    $('#loader').modal('hide');
+                    if (data && data.size > 100) {
+                        var blob = new Blob([data], {
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        });
+                        var url = window.URL.createObjectURL(blob);
+                        var a   = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = 'BRF_008_A_Detail.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    } else {
+                        alert('No detail data available for the selected date.');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    $('#loader').modal('hide');
+                    console.error('Detail download failed — HTTP ' + jqXHR.status + ' ' + errorThrown);
+                    alert('Detail download failed (HTTP ' + jqXHR.status + '). Check server logs.');
+                }
+            });
+        }
+
+        /* ── EDIT button handler — opens Bootstrap modal pre-filled ── */
+        function openDetailEdit(element) {
+            document.getElementById('edit_custId').value             = element.getAttribute('data-custId')             || '';
+            document.getElementById('edit_acctNumber').value         = element.getAttribute('data-acctNo')             || '';
+            document.getElementById('edit_acctName').value           = element.getAttribute('data-acctName')           || '';
+            document.getElementById('edit_dataType').value           = element.getAttribute('data-dataType')           || '';
+            document.getElementById('edit_rowId').value              = element.getAttribute('data-rowId')              || '';
+            document.getElementById('edit_columnId').value           = element.getAttribute('data-colId')              || '';
+            document.getElementById('edit_amountAed').value          = element.getAttribute('data-amountAed')          || '';
+            document.getElementById('edit_reportRemarks').value      = element.getAttribute('data-reportRemarks')      || '';
+            document.getElementById('edit_modRemarks').value         = element.getAttribute('data-modRemarks')         || '';
+            document.getElementById('edit_dataEntryVersion').value   = element.getAttribute('data-dataEntryVersion')   || '';
+            document.getElementById('edit_reportDate').value         = element.getAttribute('data-asondate')           || '';
+            document.getElementById('editDetailSaveBtn').disabled    = false;
+            document.getElementById('editDetailMsg').innerHTML       = '';
+            $('#editDetailModal').modal('show');
+        }
+
+        /* ── Save edited record via AJAX POST ───────────────────── */
+        function saveDetailEdit() {
+            var btn = document.getElementById('editDetailSaveBtn');
+            btn.disabled = true;
+            document.getElementById('editDetailMsg').innerHTML = '<span style="color:#555;">Saving...</span>';
+
+            $.ajax({
+                url: '/BCDRS/Reports/BRF_008_A/editDetail',
+                type: 'POST',
+                data: {
+                    custId:               $('#edit_custId').val(),
+                    acctNumber:           $('#edit_acctNumber').val(),
+                    acctName:             $('#edit_acctName').val(),
+                    dataType:             $('#edit_dataType').val(),
+                    rowId:                $('#edit_rowId').val(),
+                    columnId:             $('#edit_columnId').val(),
+                    amountAed:            $('#edit_amountAed').val(),
+                    reportRemarks:        $('#edit_reportRemarks').val(),
+                    modificationRemarks:  $('#edit_modRemarks').val(),
+                    dataEntryVersion:     $('#edit_dataEntryVersion').val(),
+                    reportDate:           $('#edit_reportDate').val()
+                },
+                success: function(response) {
+                    document.getElementById('editDetailMsg').innerHTML =
+                        '<span style="color:green; font-weight:bold;"><i class="fa fa-check-circle"></i> ' + response + '</span>';
+                    setTimeout(function() {
+                        $('#editDetailModal').modal('hide');
+                        location.reload();
+                    }, 1000);
+                },
+                error: function(jqXHR) {
+                    btn.disabled = false;
+                    document.getElementById('editDetailMsg').innerHTML =
+                        '<span style="color:red;"><i class="fa fa-times-circle"></i> Save failed (HTTP '
+                        + jqXHR.status + '). Please try again.</span>';
+                }
+            });
+        }
+
+        /* ── SUMMARY CELL double-click → navigate to detail filtered by ROW & COL ── */
+		function showDetailForCell(rowId, colId) {
+
+		    // ✅ Step 1: Show confirmation popup
+		    var proceed = confirm("Do you want to proceed to the detail table?");
+
+		    // ❌ If user clicks "Cancel" → stop execution
+		    if (!proceed) {
+		        return;
+		    }
+
+		    // ✅ Step 2: Continue existing logic
+		    $('#loader').modal('show');
+
+		    var base = /*[[@{'/Reports/BRF_008_A/Details'(
+		        asondate=${asondate}, fromdate=${fromdate}, todate=${todate},
+		        currency=${currency}, dtltype=${dtltype}, type=${type}
+		    )}]]*/ "";
+
+		    location.href = base
+		        + '&filterRowId=' + encodeURIComponent(rowId)
+		        + '&filterColId=' + encodeURIComponent(colId);
+		}
+
+        /* ── Helper: read a single URL query-param value ── */
+        function getUrlParam(name) {
+            var match = new RegExp('[?&]' + name + '=([^&#]*)').exec(window.location.search);
+            return match ? decodeURIComponent(match[1].replace(/\+/g, ' ')) : null;
+        }
+
+    </script>
+</head>
+
+<body>
+<div class="container-fluid" style="padding-left:0; padding-right:0;">
+<div class="row">
+    <div th:insert="HeaderMenu :: header"></div>
+
+    <div class="card" style="width:100%; margin:0;">
+
+        <!-- ══════════════════════ CARD HEADER ══════════════════════ -->
+        <div class="card-header"
+             style="background-color:rgb(107,122,143); display:flex; align-items:center; justify-content:space-between;">
+
+            <div style="display:flex; align-items:center;" onclick="back();">
+                <div class="left-arrow-circle"><i class="fa fa-arrow-left"></i></div>
+                <h5 style="font-family:arial; font-size:18px; padding-top:10px; font-weight:bold; color:white;">
+                    BRF 08 - BANKING AND MONETARY STATISTICS: LIQUID ASSETS RATIO (LAR)
+                </h5>
+            </div>
+
+            <div style="display:flex; align-items:center;">
+                <span style="color:white; font-size:14px; margin-right:15px; font-weight:bold;">
+                    Report Date: <span th:text="${#strings.replace(asondate,'/','-')}">--</span>
+                </span>
+
+                <!-- ── SUMMARY page buttons ─────────────────────────── -->
+
+                <!-- Hidden inputs carry fromdate/todate for the download functions -->
+                <input type="hidden" id="hdnFromdate" th:if="${displaymode == 'summary'}" th:value="${fromdate}" />
+                <input type="hidden" id="hdnTodate"   th:if="${displaymode == 'summary'}" th:value="${todate}"   />
+
+                <!-- Download split-button with custom vanilla-JS dropdown -->
+				<div class="dropdown" th:if="${displaymode == 'summary'}">
+
+				    <button class="custom-tab-btn dropdown-toggle"
+				            type="button"
+				            id="downloadDropdown"
+				            data-toggle="dropdown"
+				            aria-haspopup="true"
+				            aria-expanded="false">
+				        <i class="fa fa-download"></i> DOWNLOAD
+				    </button>
+
+				    <div class="dropdown-menu" aria-labelledby="downloadDropdown">
+
+				        <!-- Excel -->
+				        <a class="dropdown-item"
+				           href="javascript:void(0);"
+				           th:attr="data-fromdate=${fromdate}, data-todate=${todate}"
+				           onclick="downloadSummaryExcel(this)">
+				            <i class="fa fa-file-excel text-success"></i> Download as Excel
+				        </a>
+
+				        <!-- PDF -->
+				        <a class="dropdown-item"
+				           href="javascript:void(0);"
+				           th:attr="data-fromdate=${fromdate}, data-todate=${todate}"
+				           onclick="downloadSummaryPdf(this)">
+				            <i class="fa fa-file-pdf text-danger"></i> Download as PDF
+				        </a>
+
+				    </div>
+				</div>
+
+                <button type="button" class="custom-tab-btn"
+                        th:if="${displaymode == 'summary'}"
+                        onclick="showdetails();">
+                    <i class="fa fa-list"></i> DETAIL
+                </button>
+
+                <!-- ── DETAIL page buttons ──────────────────────────── -->
+
+                <button type="button" class="custom-tab-btn"
+                        th:if="${displaymode == 'detail'}"
+                        onclick="showsummary();">
+                    <i class="fa fa-table"></i> SUMMARY
+                </button>
+
+                <button type="button" class="custom-tab-btn"
+                        th:if="${displaymode == 'detail'}"
+                        th:attr="data-fromdate=${fromdate}, data-todate=${todate}"
+                        onclick="downloadDetailExcel(this);">
+                    <i class="fa fa-download"></i> DOWNLOAD DETAIL
+                </button>
+
+            </div>
+        </div>
+        <!-- ══════════════════ END CARD HEADER ══════════════════════ -->
+
+
+        <!-- ══════════════════════ CARD BODY ════════════════════════ -->
+        <div class="card-body" style="padding:20px;">
+
+            <!-- ═══════════════════════════════════════════
+                 SUMMARY VIEW
+                 ═══════════════════════════════════════════ -->
+            <div th:if="${displaymode == 'summary'}">
+
+                <div th:if="${reportsummary == null or reportsummary.isEmpty()}"
+                     class="alert alert-warning">
+                    No data found for the selected report date.
+                </div>
+
+                <div th:each="data : ${reportsummary}">
+                    <table class="rpt-table">
+                        <tr>
+                            <td colspan="4" class="header-title">
+                                BANKING AND MONETARY STATISTICS- LIQUID ASSETS RATIO (LAR) - BRF 8 (AED IN 000)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">ID:</td>
+                            <td class="info-value">2-8-2-0</td>
+                            <td colspan="2" rowspan="3" class="info-value"></td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">Bank :</td>
+                            <td class="info-value">BANK OF BARODA</td>
+                        </tr>
+                        <tr>
+                            <td class="info-label">As on:</td>
+                            <td class="info-value"
+                                th:text="${data.reportDate != null} ? ${#dates.format(data.reportDate,'dd/MM/yyyy')} : ''">
+                            </td>
+                        </tr>
+                        <tr><td colspan="4" style="height:15px;"></td></tr>
+                        <tr>
+                            <td class="col-header-right">1</td>
+                            <td class="col-header">High Quality Liquid Assets</td>
+                            <td class="col-header">Nominal<br/>amount</td>
+                            <td class="col-header">Eligible Liquid<br/>Asset</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.1</td>
+                            <td>Physical cash in hand at the bank</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('8','10')"
+                                th:text="${data.R8_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R8_NOM_AMT,1,3)} : '0'">0</td>
+                            <td rowspan="5" class="dark-gray"></td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.2</td>
+                            <td>Statutory reserves with Central Bank</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('9','10')"
+                                th:text="${data.R9_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R9_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.3</td>
+                            <td>Free and other account balances at the Central Bank (excluding statutory reserves)</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('10','10')"
+                                th:text="${data.R10_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R10_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.4</td>
+                            <td>Central Bank CDs (unencumbered)</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('11','10')"
+                                th:text="${data.R11_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R11_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.5</td>
+                            <td>UAE Federal Government Bonds and Sukuks</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('12','10')"
+                                th:text="${data.R12_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R12_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td class="subtotal-row">Sub Total (1.1 to 1.5)</td>
+                            <td class="subtotal-amt clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('13','10')"
+                                th:text="${data.R13_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R13_NOM_AMT,1,3)} : '0'">0</td>
+                            <td class="subtotal-amt clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('13','10')"
+                                th:text="${data.R13_ELA != null} ? ${#numbers.formatDecimal(data.R13_ELA,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.6</td>
+                            <td>UAE local governments publicly traded debt securities (0% Risk Weighted under BII Standardized Approach)
+                                <span class="red-text">Rated A+ and above</span></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('14','10')"
+                                th:text="${data.R14_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R14_NOM_AMT,1,3)} : '0'">0</td>
+                            <td rowspan="4" class="dark-gray"></td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.7</td>
+                            <td>UAE local governments publicly traded debt securities (0% Risk Weighted under BII Standardized Approach)
+                                <span class="red-text">Rated A and below or unrated</span></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('15','10')"
+                                th:text="${data.R15_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R15_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.8</td>
+                            <td>UAE Public sector publicly traded debt securities (non commercial, 0% Risk Weighted under BII Standardized Approach)
+                                <span class="red-text">Rated A+ and above</span></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('16','10')"
+                                th:text="${data.R16_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R16_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.9</td>
+                            <td>UAE Public sector publicly traded debt securities (non commercial, 0% Risk Weighted under BII Standardized Approach)
+                                <span class="red-text">Rated A and below or unrated</span></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('17','10')"
+                                th:text="${data.R17_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R17_NOM_AMT,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td class="subtotal-row">Sub total (1.6 to 1.9)</td>
+                            <td class="subtotal-amt clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('18','10')"
+                                th:text="${data.R18_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R18_NOM_AMT,1,3)} : '0'">0</td>
+                            <td class="subtotal-amt clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('18','10')"
+                                th:text="${data.R18_ELA != null} ? ${#numbers.formatDecimal(data.R18_ELA,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">1.10</td>
+                            <td>Foreign Sovereign debt instruments or instruments issued by their respective central banks
+                                (0% Risk Weighted under Basel II Standardized Approach)</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('19','10')"
+                                th:text="${data.R19_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R19_NOM_AMT,1,3)} : '0'">0</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('19','10')"
+                                th:text="${data.R19_ELA != null} ? ${#numbers.formatDecimal(data.R19_ELA,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td class="item-no">1.11</td>
+                            <td><strong>Total</strong></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('20','10')"
+                                th:text="${data.R20_NOM_AMT != null} ? ${#numbers.formatDecimal(data.R20_NOM_AMT,1,3)} : '0'">0</td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('20','10')"
+                                th:text="${data.R20_ELA != null} ? ${#numbers.formatDecimal(data.R20_ELA,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">2</td>
+                            <td>Total liabilities (BRF-2 LIAB: Item nos. 29- 18.1-
+                                <span class="red-text">(25- 25.5)</span>-
+                                <span class="red-text">26.7-</span> 28)</td>
+                            <td class="dark-gray" rowspan="2"></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('21','3')"
+                                th:text="${data.R21_ELA != null} ? ${#numbers.formatDecimal(data.R21_ELA,1,3)} : '0'">0</td>
+                        </tr>
+                        <tr>
+                            <td class="item-no">3</td>
+                            <td><strong>Eligible Liquid Assets Ratio (ELAR)</strong></td>
+                            <td class="amt-right clickable-cell" title="Double-click to view detail records"
+                                ondblclick="showDetailForCell('22','3')"
+                                th:text="${data.R22_ELA != null} ? ${#numbers.formatDecimal(data.R22_ELA,1,4)} : '0.0000'">0.0000</td>
+                        </tr>
+                        <tr>
+                            <td class="note-label">Note:</td>
+                            <td colspan="3" class="note-label">
+                                All securities should be unencumbered. Assets of UAE operations only need to be reported.
+                                (Ref Circular No 33/2015 of 27/05/2015)
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td colspan="3">FORM NO BSD/ BRF 8-LR/APR16</td>
+                        </tr>
+                    </table>
+                    <br/>
+                </div>
+            </div>
+            <!-- ── end summary view ── -->
+
+
+            <!-- ═══════════════════════════════════════════
+                 DETAIL VIEW
+                 ═══════════════════════════════════════════ -->
+            <div th:if="${displaymode == 'detail'}">
+
+                <div style="margin-bottom:12px;">
+                    <h6 style="font-family:Arial; font-weight:bold; color:rgb(107,122,143); font-size:15px;">
+                        <i class="fa fa-list" style="margin-right:6px;"></i>
+                        BRF_008_A DETAIL TABLE
+                        <span style="font-size:13px; font-weight:normal; color:#555; margin-left:10px;">
+                            Report Date: <span th:text="${#strings.replace(asondate,'/','-')}"></span>
+                        </span>
+                    </h6>
+                    <!-- Active cell-filter badge — shown only when arriving via summary cell double-click -->
+                    <div id="cellFilterBadge" class="cell-filter-badge" style="display:none;">
+                        <i class="fa fa-filter"></i>
+                        Filtered by: <span id="cellFilterLabel"></span>
+                        <button class="clear-btn" title="Clear filter and show all records"
+                                onclick="clearCellFilter()">&#x2715;</button>
+                    </div>
+                    <hr style="margin-top:4px;"/>
+                </div>
+
+                <!-- ── Custom ROW ID + COLUMN ID Search Bar ────────────────────── -->
+                <div class="d-flex align-items-center flex-wrap" id="rowIdSearchContainer"
+                     style="gap:16px; margin-bottom:10px;">
+                    <div class="custom-search-container" style="margin-bottom:0;">
+                        <label for="rowIdSearchInput">Search by ROW ID:</label>
+                        <input type="text" id="rowIdSearchInput" placeholder="Enter Row ID..." />
+                    </div>
+                    <div class="custom-search-container" style="margin-bottom:0;">
+                        <label for="colIdSearchInput">Search by COLUMN ID:</label>
+                        <input type="text" id="colIdSearchInput" placeholder="Enter Column ID..." />
+                    </div>
+                </div>
+
+                <div th:if="${reportdetails == null or reportdetails.isEmpty()}"
+                     class="alert alert-warning">
+                    No detail records found for the selected report date.
+                </div>
+
+                <div th:if="${reportdetails != null and !reportdetails.isEmpty()}"
+                     class="table-responsive scrollable-detail">
+                    <table class="table table-bordered table-hover table-sm"
+                           id="brf008aDetailTable"
+                           style="width:100%; font-family:Arial;">
+                        <thead>
+                            <tr>
+                                <th style="width:50px; text-align:center;">EDIT</th>
+                                <th>CUST ID</th>
+                                <th>ACCT NUMBER</th>
+                                <th>ACCT NAME</th>
+                                <th>DATA TYPE</th>
+                                <th>ROW ID</th>
+                                <th>COLUMN ID</th>
+                                <th style="text-align:right;">AMOUNT (AED)</th>
+                                <th>REPORT REMARKS</th>
+                                <th>MODIFICATION REMARKS</th>
+                                <th>DATA ENTRY VERSION</th>
+                                <th>REPORT DATE</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="det : ${reportdetails}">
+                                <!-- ── EDIT BUTTON COLUMN ────────── -->
+                                <td style="min-width:50px; text-align:center;">
+                                    <a data-toggle="tooltip" class="editrec"
+                                       title="Click to Edit this Record">
+                                        <i class="fas fa-edit" style="color:black; cursor:pointer;"
+                                           th:attr="data-custId=${det.custId},
+                                                    data-acctNo=${det.acctNumber},
+                                                    data-acctName=${det.acctName},
+                                                    data-dataType=${det.dataType},
+                                                    data-rowId=${det.rowId},
+                                                    data-colId=${det.columnId},
+                                                    data-amountAed=${det.amountAed != null ? det.amountAed : 0},
+                                                    data-reportRemarks=${det.reportRemarks},
+                                                    data-modRemarks=${det.modificationRemarks},
+                                                    data-dataEntryVersion=${det.dataEntryVersion},
+                                                    data-asondate=${det.reportDate != null ? #dates.format(det.reportDate, 'dd-MM-yyyy') : ''}"
+                                           onclick="openDetailEdit(this)"></i>
+                                    </a>
+                                </td>
+                                <td th:text="${det.custId}"></td>
+                                <td th:text="${det.acctNumber}"></td>
+                                <td th:text="${det.acctName}"></td>
+                                <td th:text="${det.dataType}"></td>
+                                <td th:text="${det.rowId}"></td>
+                                <td th:text="${det.columnId}"></td>
+                                <td style="text-align:right;"
+                                    th:text="${det.amountAed != null} ? ${#numbers.formatDecimal(det.amountAed, 0, 'COMMA', 3, 'POINT')} : '0.000'">
+                                </td>
+                                <td th:text="${det.reportRemarks}"></td>
+                                <td th:text="${det.modificationRemarks}"></td>
+                                <td th:text="${det.dataEntryVersion}"></td>
+                                <td style="white-space:nowrap;"
+                                    th:text="${det.reportDate != null} ? ${#dates.format(det.reportDate,'dd/MM/yyyy')} : ''">
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- ── end detail view ── -->
+
+        </div>
+        <!-- end card-body -->
+    </div>
+    <!-- end card -->
+</div>
+</div>
+
+<!-- Loader Modal -->
+<div class="modal fade" id="loader" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background:transparent;">
+            <div class="modal-body" style="text-align:center;">
+                <img th:src="@{/images/loader.gif}" style="width:153px; height:auto;" alt="Loading...">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        if ($('#brf008aDetailTable').length) {
+            // ── Initialize DataTable ──────────────────────────────────────────
+            var table = $('#brf008aDetailTable').DataTable({
+                scrollY: "500px",
+                scrollX: true,
+                scrollCollapse: true,
+                paging: true,
+                searching: true,
+                ordering: true,
+                pageLength: 10,
+                lengthChange: false,
+                autoWidth: false,
+                dom: '<"d-flex justify-content-between align-items-center mb-2"<"#customSearchPlaceholder"> p>t<"d-flex justify-content-end mt-2"p>',
+                columnDefs: [
+                    { width: "50px",  targets: 0, orderable: false, searchable: false },
+                    { width: "100px", targets: 1 },
+                    { width: "110px", targets: 2 },
+                    { width: "150px", targets: 3 },
+                    { width: "80px",  targets: 5 },
+                    { width: "80px",  targets: 6 },
+                    { width: "130px", targets: 7, className: "dt-right" }
+                ]
+            });
+
+            // ── Move custom search bar into DataTable header area ─────────────
+            $('#rowIdSearchContainer').detach().prependTo('#customSearchPlaceholder');
+
+            // ── Bind ROW ID search input → column 5 ──────────────────────────
+            $('#rowIdSearchInput').on('keyup change', function () {
+                table.column(5).search(this.value).draw();
+            });
+
+            // ── Bind COLUMN ID search input → column 6 ────────────────────────
+            $('#colIdSearchInput').on('keyup change', function () {
+                table.column(6).search(this.value).draw();
+            });
+
+            // ── Auto-apply filter when arriving via summary cell double-click ──
+            // filterRowId and filterColId are appended to the URL by showDetailForCell()
+            var filterRowId = getUrlParam('filterRowId');
+            var filterColId = getUrlParam('filterColId');
+
+            if (filterRowId || filterColId) {
+                if (filterRowId) {
+                    $('#rowIdSearchInput').val(filterRowId);
+                    table.column(5).search(filterRowId);
+                }
+                if (filterColId) {
+                    $('#colIdSearchInput').val(filterColId);
+                    table.column(6).search(filterColId);
+                }
+                table.draw();
+
+                // Show the active-filter badge above the table
+                var parts = [];
+                if (filterRowId) parts.push('Row ID = ' + filterRowId);
+                if (filterColId) parts.push('Column ID = ' + filterColId);
+                $('#cellFilterLabel').text(parts.join(',  '));
+                $('#cellFilterBadge').show();
+            }
+
+            // ── Fix alignment on resize / zoom ────────────────────────────────
+            $(window).on('resize', function () {
+                table.columns.adjust().draw(false);
+            });
+
+            // ── Fix initial column misalignment ──────────────────────────────
+            setTimeout(function () {
+                table.columns.adjust().draw(false);
+            }, 500);
+        }
+    });
+
+    // ── Clear the cell-filter: wipe URL params and reload ────────────────────
+    function clearCellFilter() {
+        var url = window.location.href
+            .replace(/([?&])filterRowId=[^&#]*/g, '$1')
+            .replace(/([?&])filterColId=[^&#]*/g, '$1')
+            .replace(/[?&]{2,}/g, '&')
+            .replace(/[?&]$/, '');
+        location.href = url;
+    }
+</script>
+
+<!-- ══════════════════ EDIT DETAIL RECORD MODAL ══════════════════ -->
+<div class="modal fade" id="editDetailModal" tabindex="-1" role="dialog"
+     aria-labelledby="editDetailModalLabel" aria-hidden="true"
+     data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+
+            <!-- Header -->
+            <div class="modal-header"
+                 style="background-color:rgb(107,122,143); padding:10px 16px;">
+                <h5 class="modal-title" id="editDetailModalLabel"
+                    style="color:white; font-family:Arial; font-size:15px; font-weight:bold; margin:0;">
+                    <i class="fas fa-edit" style="margin-right:6px;"></i>
+                    Edit BRF_008_A Detail Record
+                </h5>
+                <button type="button" class="close" data-dismiss="modal"
+                        style="color:white; opacity:1; font-size:20px;">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body" style="padding:20px; font-family:Arial; font-size:13px;">
+                <div class="form-row">
+                    <!-- CUST ID — readonly key -->
+                    <div class="form-group col-md-4">
+                        <label style="font-weight:bold;">CUST ID <span style="color:red;">*</span></label>
+                        <input type="text" id="edit_custId" class="form-control form-control-sm"
+                               readonly style="background:#f0f0f0; font-weight:bold;" />
+                    </div>
+                    <!-- ACCT NUMBER -->
+                    <div class="form-group col-md-4">
+                        <label style="font-weight:bold;">ACCT NUMBER</label>
+                        <input type="text" id="edit_acctNumber" class="form-control form-control-sm" maxlength="50"/>
+                    </div>
+                    <!-- ACCT NAME -->
+                    <div class="form-group col-md-4">
+                        <label style="font-weight:bold;">ACCT NAME</label>
+                        <input type="text" id="edit_acctName" class="form-control form-control-sm" maxlength="100"/>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <!-- DATA TYPE -->
+                    <div class="form-group col-md-3">
+                        <label style="font-weight:bold;">DATA TYPE</label>
+                        <input type="text" id="edit_dataType" class="form-control form-control-sm" maxlength="20"/>
+                    </div>
+                    <!-- ROW ID -->
+                    <div class="form-group col-md-3">
+                        <label style="font-weight:bold;">ROW ID</label>
+                        <input type="text" id="edit_rowId" class="form-control form-control-sm" maxlength="20"/>
+                    </div>
+                    <!-- COLUMN ID -->
+                    <div class="form-group col-md-3">
+                        <label style="font-weight:bold;">COLUMN ID</label>
+                        <input type="text" id="edit_columnId" class="form-control form-control-sm" maxlength="20"/>
+                    </div>
+                    <!-- AMOUNT (AED) -->
+                    <div class="form-group col-md-3">
+                        <label style="font-weight:bold;">AMOUNT (AED)</label>
+                        <input type="number" step="0.001" id="edit_amountAed"
+                               class="form-control form-control-sm" style="text-align:right;"/>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <!-- REPORT REMARKS -->
+                    <div class="form-group col-md-6">
+                        <label style="font-weight:bold;">REPORT REMARKS</label>
+                        <textarea id="edit_reportRemarks" class="form-control form-control-sm"
+                                  rows="2" maxlength="500"></textarea>
+                    </div>
+                    <!-- MODIFICATION REMARKS -->
+                    <div class="form-group col-md-6">
+                        <label style="font-weight:bold;">MODIFICATION REMARKS</label>
+                        <textarea id="edit_modRemarks" class="form-control form-control-sm"
+                                  rows="2" maxlength="500"></textarea>
+                    </div>
+                </div>
+                <!-- hidden fields -->
+                <input type="hidden" id="edit_dataEntryVersion" />
+                <input type="hidden" id="edit_reportDate" />
+
+                <!-- Status message row -->
+                <div id="editDetailMsg" style="min-height:22px; margin-top:4px;"></div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer" style="padding:8px 16px;">
+                <button type="button" class="btn btn-secondary btn-sm"
+                        data-dismiss="modal" style="font-family:Arial;">
+                    <i class="fa fa-times"></i> Cancel
+                </button>
+                <button type="button" id="editDetailSaveBtn"
+                        class="btn btn-sm" onclick="saveDetailEdit();"
+                        style="background-color:#E77400; color:white; font-family:Arial; font-weight:bold;">
+                    <i class="fa fa-save"></i> Save Changes
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+<!-- ══════════════════ END EDIT MODAL ══════════════════════════════ -->
+
+</body>
+</html>

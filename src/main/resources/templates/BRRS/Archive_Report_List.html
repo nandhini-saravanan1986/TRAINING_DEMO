@@ -1,0 +1,92 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-4.dtd">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Archive — Select Report</title>
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/bootstrap/4.3.1/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" type="text/css" th:href="@{/webjars/font-awesome/5.9.0/css/all.min.css}"/>
+    <link rel="stylesheet" th:href="@{/css/CustomButton.css}"/>
+    <link rel="icon" th:href="@{/favicon.ico}" type="image/x-icon"/>
+    <script th:src="@{/webjars/jquery/3.4.1/jquery.min.js}"></script>
+    <script th:src="@{/webjars/bootstrap/4.3.1/js/bootstrap.min.js}"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f5f5f5; }
+        .card { box-shadow: 0 4px 8px rgba(0,0,0,0.1); border-radius: 8px; }
+        .left-arrow-circle {
+            width:35px; height:35px; background-color:white;
+            border-radius:50%; display:flex; align-items:center;
+            justify-content:center; margin-right:10px; cursor:pointer;
+        }
+        .left-arrow-circle i { color:#6b7a8f; font-size:16px; }
+        .rpt-link {
+            color: #E77400; font-weight: bold; text-decoration: none;
+            font-family: Arial; font-size: 14px;
+        }
+        .rpt-link:hover { text-decoration: underline; color: #c96500; }
+        table thead th {
+            background-color: rgb(107,122,143);
+            color: white; font-weight: bold;
+            font-size: 13px; vertical-align: middle;
+        }
+        table td { font-size: 13px; vertical-align: middle; }
+    </style>
+</head>
+
+<body>
+<div class="container-fluid" style="padding-left:0; padding-right:0;">
+<div class="row">
+    <div th:insert="HeaderMenu :: header"></div>
+
+    <div class="card" style="width:100%; margin:0;">
+
+        <!-- Card Header -->
+        <div class="card-header"
+             style="background-color:rgb(107,122,143); display:flex; align-items:center;">
+            <div style="display:flex; align-items:center;" onclick="window.history.back();">
+                <div class="left-arrow-circle"><i class="fa fa-arrow-left"></i></div>
+                <h5 style="font-family:arial; font-size:18px; padding-top:10px;
+                            font-weight:bold; color:white; margin:0;">
+                    ARCHIVE — SELECT REPORT
+                </h5>
+            </div>
+        </div>
+
+        <!-- Card Body -->
+        <div class="card-body" style="padding:20px;">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" style="width:100%;">
+                    <thead>
+                        <tr>
+                            <th style="width:150px;">Report Code</th>
+                            <th>Report Name</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="report : ${reportList}">
+                            <td>
+                                <a class="rpt-link"
+                                   th:href="@{/Archive/{code}(code=${report.reportCode})}"
+                                   th:text="${report.reportCode}">
+                                </a>
+                            </td>
+                            <td th:text="${report.reportName}"></td>
+                            <td th:text="${report.description}"></td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(reportList)}">
+                            <td colspan="3" class="text-center text-muted">
+                                No reports available for archive.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+</div>
+</body>
+</html>

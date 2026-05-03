@@ -945,14 +945,25 @@ color:white;
 								
 								
 						</li>
+						<!-- Archive Tab — add after BRF Reports </li> at line 947 -->
+						<li class="nav-item">
+						    <a class="nav-link"
+						       th:href="@{/Archive}"
+						       style="text-align:center; color:black;">
+						        <i class="fa fa-archive"></i> Archive
+						    </a>
+						</li>
 						<li class="nav-item"><a class="nav-link"
 							th:href="@{/RequestCodeMapping}"
 							style=" text-align: center; color: black;">Report Parameter</a>
 						</li>
 						 <li>
             <a href="#" class="nav-link" id="employee" onclick="contentLoad(this)">Employee Management</a>
+			
         </li>
-						
+		<li class="nav-item">
+									<a th:href="@{/employeeDetails}" class="nav-link" style="text-align:center; color:black;">ROSHAN</a>
+								</li>	
 						
 						
 					</ul>

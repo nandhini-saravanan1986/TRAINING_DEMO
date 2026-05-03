@@ -504,6 +504,21 @@ PURPOSE		: BWRBRREPORT
 				}
 			});
 		}
+		/* ── Download summary as PDF ─────────────────────────────── */
+		function downloadSummaryPdf(element) {
+		    var fromdate = element.getAttribute('data-fromdate');
+		    var todate   = element.getAttribute('data-todate');
+
+		    $('#loader').modal('show');
+
+		    var url = '/BCDRS/Reports/M_IS/downloadSummaryPdf'
+		            + '?fromdate=' + encodeURIComponent(fromdate)
+		            + '&todate='   + encodeURIComponent(todate);
+
+		    window.location.href = url;
+
+		    setTimeout(function() { $('#loader').modal('hide'); }, 2000);
+		}
 		function editRecord() {
 			showResultModal('Alert', 'Development in progress');
 
@@ -1186,6 +1201,13 @@ function downloadDetailfile(jobId,filename) {
 							style="font-family: Arial; font-weight: bold;">
 							<i class="fa fa-download"></i> Email
 
+						</button>
+						<button type="button" class="custom-tab-btn"
+						    th:if="${displaymode == 'summary' or displaymode == 'resubSummary'}"
+						    th:attr="data-fromdate=${fromdate}, data-todate=${todate}"
+						    onclick="downloadSummaryPdf(this);"
+						    style="font-family: Arial; font-weight: bold;">
+						    <i class="fa fa-file-pdf"></i> PDF
 						</button>
 
 

@@ -1,6 +1,8 @@
 package com.bornfire.brf.services;
 
 import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.servlet.http.HttpServletRequest;
@@ -63,6 +65,13 @@ public class RegulatoryReportServices {
 	@Autowired
 	BRRS_M_IS_ReportService BRRS_M_IS_reportservice;
 
+	@Autowired
+	BRF_008_A_ReportService BRF_008_A_reportservice;
+	
+
+    @Autowired
+    BRF_052_ReportService BRF_052_reportservice;
+
 
 	private static final Logger logger = LoggerFactory.getLogger(RegulatoryReportServices.class);
 
@@ -81,8 +90,14 @@ public class RegulatoryReportServices {
 					type, version);
 			break;
 
-		
+		case "BRF_008_A":
+			repsummary = BRF_008_A_reportservice.getBRF07View(reportId, fromdate, todate, currency, dtltype, pageable, type);
+			break;
 			
+		case "BRF_052":
+            repsummary = BRF_052_reportservice.getBRF052View(
+                    reportId, fromdate, todate, currency, dtltype, type);
+            break;
 
 		}
 		return repsummary;
@@ -101,8 +116,9 @@ public class RegulatoryReportServices {
 			repdetail = BRRS_M_IS_reportservice.getM_IScurrentDtl(reportId, fromdate, todate, currency, dtltype,
 					pageable, Filter, type, version);
 			break;
-		
-		
+		case "BRF_008_A":
+		    repdetail = BRF_008_A_reportservice.getBRF008ADetailView(reportId, fromdate, todate, currency, dtltype, type);
+		    break;
 		
 		}
 
@@ -122,13 +138,36 @@ public class RegulatoryReportServices {
 				repfile = BRRS_M_IS_reportservice.BRRS_M_ISExcel(filename, reportId, fromdate, todate, currency,
 						dtltype, type, format, version);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			break;
-		
-	
 			
+		case "BRF_052":
+            try {
+                repfile = BRF_052_reportservice.BRF_052_Excel(
+                        filename,   // typically "BRF_052" — controller appends .xlsx
+                        reportId,
+                        fromdate,
+                        todate,
+                        currency,
+                        dtltype);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            break;
+
+		case "BRF_008_A":
+		    try {
+		        if ("BRF_008_A_Detail".equals(filename) || "BRF_008_A_Detail.xlsx".equals(filename)) {
+		            repfile = BRF_008_A_reportservice.BRF_008_A_DetailExcel(filename, fromdate, todate);
+		        } else {
+		            repfile = BRF_008_A_reportservice.BRF_008_A_Excel(filename, reportId, fromdate, todate, currency, dtltype);
+		        }
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		    break;
+
 		}
 
 		return repfile;
@@ -159,7 +198,6 @@ public class RegulatoryReportServices {
 	@Async
 	public void generateReportAsync(String jobId, String filename, String fromdate, String todate, String dtltype,
 			String type, String currency, String version) {
-		// System.out.println("Starting report generation for: " + filename);
 
 		byte[] fileData = null;
 
@@ -175,8 +213,13 @@ public class RegulatoryReportServices {
 					version);
 
 		}
-
-		
+		// ✅ ADD THESE TWO — nothing else changes in this file
+		else if ("BRF_052_Detail".equals(filename)) {
+		    fileData = BRF_052_reportservice.BRF_052_DetailExcel(filename, fromdate, todate);
+		}
+		else if ("BRF_052_Archive_Detail".equals(filename)) {
+		    fileData = BRF_052_reportservice.BRF_052_ArchiveDetailExcel(todate);
+		}
 
 		if (fileData == null) {
 			logger.warn("Excel generation failed or no data for jobId: {}", jobId);
@@ -189,7 +232,6 @@ public class RegulatoryReportServices {
 	}
 
 	public byte[] getReport(String jobId) {
-		// System.out.println("Report generation completed for: " + jobId);
 		return jobStorage.get(jobId);
 	}
 
@@ -197,73 +239,203 @@ public class RegulatoryReportServices {
 			String currency, String subreportid, String secid, String dtltype, String reportingTime,
 			String instancecode, String filter) {
 
-		
-		byte[] excelBytes =null;
+		byte[] excelBytes = null;
+		byte[] pdfBytes = null;
 
-		switch (reportId) {
+        logger.info("PDF request → reportId={} fromdate={} todate={}", reportId, fromdate, todate);
+
+        switch (reportId) {
+
+            case "BRF_008_A":
+                try {
+                    // Step 1: Generate Excel
+                    excelBytes = BRF_008_A_reportservice.BRF_008_A_Excel(
+                            filename, reportId, fromdate, todate, currency, dtltype);
+
+                    if (excelBytes == null || excelBytes.length == 0) {
+                        logger.warn("No Excel data found for PDF generation → todate={}", todate);
+                        return new byte[0];
+                    }
+
+                    logger.info("Excel generated successfully → size={} bytes", excelBytes.length);
+
+                    // Step 2: Convert to PDF (CRITICAL FIX)
+                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes);
+
+                    if (pdfBytes == null || pdfBytes.length == 0) {
+                        logger.error("PDF conversion returned empty bytes");
+                        return new byte[0];
+                    }
+
+                    logger.info("PDF conversion successful → size={} bytes", pdfBytes.length);
+
+                } catch (Exception e) {
+                    logger.error("PDF generation failed for BRF_008_A", e);
+                    return new byte[0];
+                }
+                break;
+            default:
+                logger.warn("Unknown reportId for PDF generation: {}", reportId);
+                return new byte[0];
+                
+            case "BRF_052":
+                try {
+                    // Step 1: Generate Excel (template-based)
+                    excelBytes = BRF_052_reportservice.BRF_052_Excel(
+                            filename,
+                            reportId,
+                            fromdate,
+                            todate,
+                            currency,
+                            dtltype
+                    );
+
+                    if (excelBytes == null || excelBytes.length == 0) {
+                        logger.warn("No Excel data found for BRF_052 PDF generation → todate={}", todate);
+                        return new byte[0];
+                    }
+
+                    logger.info("BRF_052 Excel generated successfully → size={} bytes", excelBytes.length);
+
+                    // Step 2: Convert Excel → PDF
+                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes);
+
+                    if (pdfBytes == null || pdfBytes.length == 0) {
+                        logger.error("BRF_052 PDF conversion returned empty bytes");
+                        return new byte[0];
+                    }
+
+                    logger.info("BRF_052 PDF conversion successful → size={} bytes", pdfBytes.length);
+
+                } catch (Exception e) {
+                    logger.error("PDF generation failed for BRF_052", e);
+                    return new byte[0];
+                }
+                break;
+                
+            case "M_IS":
+                try {
+                    // Step 1: Generate filled Excel from M_IS.xlsx template
+                    excelBytes = BRRS_M_IS_reportservice.BRRS_M_ISExcel(
+                            "M_IS.xlsx",
+                            reportId,
+                            fromdate,
+                            todate,
+                            currency,
+                            dtltype,
+                            null,      // type = null  → normal live-data path inside BRRS_M_ISExcel
+                            "excel",   // format
+                            null       // version = null → non-archival
+                    );
+
+                    if (excelBytes == null || excelBytes.length == 0) {
+                        logger.warn("M_IS: No Excel data found for PDF generation → todate={}", todate);
+                        return new byte[0];
+                    }
+
+                    logger.info("M_IS: Excel generated → {} bytes", excelBytes.length);
+
+                    // Step 2: Convert using table-range-aware overload.
+                    // Two tables share one sheet — each range gets its own maxCol
+                    // so Table 1 (cols A–G) is not padded with Table 2's extra columns (H–I).
+                    //
+                    // POI rows 0–15  → bank/report header rows + Table 1 (5A Income on Investments)
+                    // POI rows 16–37 → Table 2 (5B Investment Securities) + footnote row
+                    List<int[]> tableRanges = Arrays.asList(
+                            new int[]{0,  15},
+                            new int[]{16, 37}
+                    );
+                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes, tableRanges);
+
+                    if (pdfBytes == null || pdfBytes.length == 0) {
+                        logger.error("M_IS: PDF conversion returned empty bytes");
+                        return new byte[0];
+                    }
+
+                    logger.info("M_IS: PDF conversion successful → {} bytes", pdfBytes.length);
+                    return pdfBytes;
+
+                } catch (Exception e) {
+                    logger.error("M_IS: PDF generation failed", e);
+                    return new byte[0];
+                }
 
 		case "BRF_67":
 			try {
-
-				 excelBytes = BRF_67_reportservice.BRF_67_Excel(filename, reportId, fromdate, todate, currency,dtltype);
-
+				excelBytes = BRF_67_reportservice.BRF_67_Excel(filename, reportId, fromdate, todate, currency, dtltype);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("getPdfDownloadFile: BRF_67 Excel generation failed", e);
 			}
 			break;
+
 		case "BRF_70":
 			try {
-					excelBytes = BRF_70_reportservice.BRF_70Excel(filename, reportId, fromdate, todate, currency,dtltype);
+				excelBytes = BRF_70_reportservice.BRF_70Excel(filename, reportId, fromdate, todate, currency, dtltype);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("getPdfDownloadFile: BRF_70 Excel generation failed", e);
 			}
-
 			break;
+
 		case "BRF65":
 			try {
 				excelBytes = BRF65_ReportService.BRF65Excel(filename, reportId, fromdate, todate, currency, dtltype);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("getPdfDownloadFile: BRF65 Excel generation failed", e);
 			}
 			break;
+
 		case "M_SFINP2":
 			try {
-				excelBytes = BRRS_M_SFINP2_reportservice.BRRS_M_SFINP2Excel(filename, reportId, fromdate, todate, currency,
-						dtltype);
+				excelBytes = BRRS_M_SFINP2_reportservice.BRRS_M_SFINP2Excel(filename, reportId, fromdate, todate,
+						currency, dtltype);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("getPdfDownloadFile: M_SFINP2 Excel generation failed", e);
 			}
 			break;
 		}
-		
+
+		// Guard: if Excel generation produced nothing, skip conversion immediately.
+		// The controller will receive null, log its own warning, and send HTTP 204.
+		if (excelBytes == null || excelBytes.length == 0) {
+			logger.warn("getPdfDownloadFile: Excel bytes null/empty for reportId={} — skipping PDF conversion", reportId);
+			return null;
+		}
+
+		logger.info("getPdfDownloadFile: {} Excel bytes ready, starting PDF conversion for reportId={}",
+				excelBytes.length, reportId);
+
 		byte[] pdffile = null;
 		try {
 			pdffile = exceltopdfservice.convertExcelBytesToPdf(excelBytes);
+			if (pdffile != null && pdffile.length > 0) {
+				logger.info("getPdfDownloadFile: PDF conversion succeeded — {} bytes for reportId={}", pdffile.length, reportId);
+			} else {
+				logger.warn("getPdfDownloadFile: PDF conversion returned null/empty for reportId={}", reportId);
+			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			// FIX: was e.printStackTrace() — this was the EXACT reason the error was
+			// invisible in your log. The exception from convertExcelBytesToPdf was being
+			// swallowed silently to stderr while the SLF4J log showed nothing.
+			// After this fix, the next run will show the real exception class and message
+			// here, which will tell us exactly what to fix in Exceltopdfservice.
+			logger.error("getPdfDownloadFile: convertExcelBytesToPdf threw for reportId={} — this is the root cause of the 'No data available' popup",
+					reportId, e);
 		}
-		
-		
-		return pdffile;
+
+		return pdfBytes;
 	}
 	
 	@Async
 	public void generateReportAsyncpdf(String jobId, String filename, String fromdate, String todate, String dtltype,
 			String type, String currency, String version) {
-		// System.out.println("Starting report generation for: " + filename);
 
 		byte[] fileData = null;
 
 		if ("BRF_67_Detail".equals(filename)) {
 			try {
 			fileData = BRF_67_reportservice.BRF_67_DetailExcel(filename, fromdate, todate);
-			fileData=BRF_67_reportservice.convertExcelBytesToPdf(fileData);
+			fileData = BRF_67_reportservice.convertExcelBytesToPdf(fileData);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 						
