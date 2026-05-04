@@ -345,7 +345,7 @@ public class RegulatoryReportServices {
                             new int[]{0,  15},
                             new int[]{16, 37}
                     );
-                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes, tableRanges);
+                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes, tableRanges, false);
 
                     if (pdfBytes == null || pdfBytes.length == 0) {
                         logger.error("M_IS: PDF conversion returned empty bytes");

@@ -335,16 +335,46 @@ public class Exceltopdfservice {
  // Each range gets its own PdfPTable with its own minCol/maxCol scan, so
  // tables with different column counts render correctly side by side in the PDF.
  // Used by M_IS (two tables on one sheet with different column widths).
+ // Has page break function controlled by boolean parameter.
+ // Has Auto page sizing between A4 and A3.
  // ─────────────────────────────────────────────────────────────────────────
- public byte[] convertExcelBytesToPdf(byte[] excelBytes, List<int[]> tableRowRanges) throws Exception {
+    public byte[] convertExcelBytesToPdf(byte[] excelBytes, List<int[]> tableRowRanges, boolean insertPageBreaks) throws Exception {
      try (
          InputStream inputStream = new ByteArrayInputStream(excelBytes);
          Workbook workbook = WorkbookFactory.create(inputStream);
          ByteArrayOutputStream pdfOut = new ByteArrayOutputStream()
      ) {
          Sheet sheet = workbook.getSheetAt(0);
+         
+      // ── Pre-scan: total column width across all ranges → decide page size ────
+         int globalMinCol = Integer.MAX_VALUE;
+         int globalMaxCol = Integer.MIN_VALUE;
+         for (int[] r : tableRowRanges) {
+             for (int ri = r[0]; ri <= Math.min(r[1], sheet.getLastRowNum()); ri++) {
+                 Row row = sheet.getRow(ri);
+                 if (row == null) continue;
+                 for (Cell cell : row) {
+                     if (cell == null) continue;
+                     int ci = cell.getColumnIndex();
+                     if (ci < globalMinCol) globalMinCol = ci;
+                     if (ci > globalMaxCol) globalMaxCol = ci;
+                 }
+             }
+         }
+         float totalWidthPOI = 0f;
+         if (globalMinCol != Integer.MAX_VALUE) {
+             for (int c = globalMinCol; c <= globalMaxCol; c++) {
+                 int raw = sheet.getColumnWidth(c);
+                 if (raw == 0) raw = sheet.getDefaultColumnWidth() * 256;
+                 totalWidthPOI += raw;
+             }
+         }
+         // Convert POI units → approximate mm  (POI unit = 1/256 char ≈ 2.1mm per char)
+         float contentWidthMm = (totalWidthPOI / 256f) * 2.1f;
+         // A4 landscape printable width ≈ 190mm → beyond that use A3 landscape
+         Rectangle pageSize = (contentWidthMm > 190f) ? PageSize.A3.rotate() : PageSize.A4.rotate();
 
-         Document document = new Document(PageSize.A3.rotate(), 20, 20, 20, 20);
+         Document document = new Document(pageSize, 20, 20, 20, 20);
          PdfWriter.getInstance(document, pdfOut);
          document.open();
 
@@ -359,6 +389,11 @@ public class Exceltopdfservice {
          for (int[] range : tableRowRanges) {
              int startRow = range[0];
              int endRow   = Math.min(range[1], sheet.getLastRowNum());
+             
+             // ── Page break between tables ─────────────────────────────────────
+             if (!firstTable && insertPageBreaks) {
+                 document.newPage();
+             }
 
              // ── Per-range column detection ────────────────────────────────────
              // Scan only rows within this range so Table 1 (cols A–G) is not
