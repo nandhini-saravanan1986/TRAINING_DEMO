@@ -71,6 +71,15 @@ public class RegulatoryReportServices {
 
     @Autowired
     BRF_052_ReportService BRF_052_reportservice;
+    
+	@Autowired
+	BRRS_BG_DBS10_FINCON_III_1A_ReportServices BG_Fincon_1A;
+	
+	@Autowired
+	BRRS_BG_DBS10_FINCON_III_1B_ReportServices BG_Fincon_1B;
+	
+	@Autowired
+	BRRS_BG_DBS10_FINCON_III_1C_ReportServices BG_Fincon_1C;
 
 
 	private static final Logger logger = LoggerFactory.getLogger(RegulatoryReportServices.class);
@@ -98,6 +107,24 @@ public class RegulatoryReportServices {
             repsummary = BRF_052_reportservice.getBRF052View(
                     reportId, fromdate, todate, currency, dtltype, type);
             break;
+            
+	    case "BG_FINCON_1A":
+			repsummary = BG_Fincon_1A.getBG_FINCON_1A_View(reportId, fromdate, todate, currency, dtltype,
+					pageable, type, version);
+
+			break;
+			
+	    case "BG_FINCON_1B":
+			repsummary = BG_Fincon_1B.getBG_FINCON_1B_View(reportId, fromdate, todate, currency, dtltype,
+					pageable, type, version);
+
+			break;
+			
+	    case "BG_FINCON_1C":
+			repsummary = BG_Fincon_1C.getBG_FINCON_1C_View(reportId, fromdate, todate, currency, dtltype,
+					pageable, type, version);
+
+			break;
 
 		}
 		return repsummary;
@@ -119,6 +146,24 @@ public class RegulatoryReportServices {
 		case "BRF_008_A":
 		    repdetail = BRF_008_A_reportservice.getBRF008ADetailView(reportId, fromdate, todate, currency, dtltype, type);
 		    break;
+		    
+	    case "BG_FINCON_1A":
+
+			repdetail = BG_Fincon_1A.getFincon_1A_currentDtl(reportId, fromdate, todate, currency, dtltype,
+					pageable, Filter, type, version);
+			break;
+			
+	    case "BG_FINCON_1B":
+
+			repdetail = BG_Fincon_1B.getFincon_1B_currentDtl(reportId, fromdate, todate, currency, dtltype,
+					pageable, Filter, type, version);
+			break;
+			
+	    case "BG_FINCON_1C":
+
+			repdetail = BG_Fincon_1C.getFincon_1C_currentDtl(reportId, fromdate, todate, currency, dtltype,
+					pageable, Filter, type, version);
+			break;
 		
 		}
 
@@ -167,6 +212,36 @@ public class RegulatoryReportServices {
 		        e.printStackTrace();
 		    }
 		    break;
+		    
+		 case "BG_FINCON_1A":
+				try {
+					System.out.println("came to Regulatory service Fincon_1A");
+					repfile = BG_Fincon_1A.getFincon_1A_Excel(filename, reportId, fromdate, todate, currency,
+							dtltype, type, version);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block e.printStackTrace();
+				}
+				break;
+				
+		 case "BG_FINCON_1B":
+				try {
+					System.out.println("came to Regulatory service Fincon_1B");
+					repfile = BG_Fincon_1B.getFincon_1B_Excel(filename, reportId, fromdate, todate, currency,
+							dtltype, type, version);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block e.printStackTrace();
+				}
+				break;
+				
+		 case "BG_FINCON_1C":
+				try {
+					System.out.println("came to Regulatory service Fincon_1C");
+					repfile = BG_Fincon_1C.getFincon_1C_Excel(filename, reportId, fromdate, todate, currency,
+							dtltype, type, version);
+				} catch (Exception e) {
+					// TODO Auto-generated catch block e.printStackTrace();
+				}
+				break;
 
 		}
 
@@ -219,6 +294,23 @@ public class RegulatoryReportServices {
 		}
 		else if ("BRF_052_Archive_Detail".equals(filename)) {
 		    fileData = BRF_052_reportservice.BRF_052_ArchiveDetailExcel(todate);
+		}
+		else if ("DBIS10_FINCON_1ADetail".equals(filename)) {
+
+			fileData = BG_Fincon_1A.getFincon_1A_DetailExcel(filename, fromdate, todate, currency, dtltype,
+					type, version);
+		}
+		
+		else if ("DBIS10_FINCON_1BDetail".equals(filename)) {
+
+			fileData = BG_Fincon_1B.getFincon_1B_DetailExcel(filename, fromdate, todate, currency, dtltype,
+					type, version);
+		}
+		
+		else if ("DBIS10_FINCON_1CDetail".equals(filename)) {
+
+			fileData = BG_Fincon_1C.getFincon_1C_DetailExcel(filename, fromdate, todate, currency, dtltype,
+					type, version);
 		}
 
 		if (fileData == null) {
