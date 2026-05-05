@@ -412,9 +412,11 @@ public class Exceltopdfservice {
              }
              if (minCol == Integer.MAX_VALUE) continue; // range is entirely empty — skip
 
+             
              List<Integer> colIndexes = new ArrayList<>();
-             for (int c = minCol; c <= maxCol; c++) colIndexes.add(c);
-
+             for (int c = globalMinCol; c <= globalMaxCol; c++) {
+                 colIndexes.add(c);
+             }
              // ── Proportional column widths from Excel ─────────────────────────
              float[] colWidths = new float[colIndexes.size()];
              float totalWidth = 0f;

@@ -72,6 +72,7 @@ public class RegulatoryReportServices {
     @Autowired
     BRF_052_ReportService BRF_052_reportservice;
     
+
 	@Autowired
 	BRRS_BG_DBS10_FINCON_III_1A_ReportServices BG_Fincon_1A;
 	
@@ -80,6 +81,10 @@ public class RegulatoryReportServices {
 	
 	@Autowired
 	BRRS_BG_DBS10_FINCON_III_1C_ReportServices BG_Fincon_1C;
+
+    @Autowired
+    BRRS_M_CALOC_ReportService BRRS_M_CALOC_reportService;
+
 
 
 	private static final Logger logger = LoggerFactory.getLogger(RegulatoryReportServices.class);
@@ -107,6 +112,7 @@ public class RegulatoryReportServices {
             repsummary = BRF_052_reportservice.getBRF052View(
                     reportId, fromdate, todate, currency, dtltype, type);
             break;
+
             
 	    case "BG_FINCON_1A":
 			repsummary = BG_Fincon_1A.getBG_FINCON_1A_View(reportId, fromdate, todate, currency, dtltype,
@@ -125,6 +131,11 @@ public class RegulatoryReportServices {
 					pageable, type, version);
 
 			break;
+		case "M_CALOC":
+		    repsummary = BRRS_M_CALOC_reportService.getBRRS_M_CALOCview(reportId, fromdate, todate, currency, dtltype,
+		            pageable, type, version);
+		    break;
+
 
 		}
 		return repsummary;
@@ -146,6 +157,7 @@ public class RegulatoryReportServices {
 		case "BRF_008_A":
 		    repdetail = BRF_008_A_reportservice.getBRF008ADetailView(reportId, fromdate, todate, currency, dtltype, type);
 		    break;
+
 		    
 	    case "BG_FINCON_1A":
 
@@ -164,6 +176,12 @@ public class RegulatoryReportServices {
 			repdetail = BG_Fincon_1C.getFincon_1C_currentDtl(reportId, fromdate, todate, currency, dtltype,
 					pageable, Filter, type, version);
 			break;
+
+		case "M_CALOC":
+		    repdetail = BRRS_M_CALOC_reportService.getM_CALOCcurrentDtl(reportId, fromdate, todate, currency, dtltype,
+		            pageable, Filter, type, version);
+		    break;
+
 		
 		}
 
@@ -212,6 +230,7 @@ public class RegulatoryReportServices {
 		        e.printStackTrace();
 		    }
 		    break;
+
 		    
 		 case "BG_FINCON_1A":
 				try {
@@ -243,6 +262,16 @@ public class RegulatoryReportServices {
 				}
 				break;
 
+		case "M_CALOC":
+		    try {
+		        repfile = BRRS_M_CALOC_reportService.getBRRS_M_CALOCExcel(filename, reportId, fromdate, todate,
+		                currency, dtltype, type, format, version);
+		    } catch (Exception e) {
+		        e.printStackTrace();
+		    }
+		    break;
+
+
 		}
 
 		return repfile;
@@ -257,6 +286,9 @@ public class RegulatoryReportServices {
 			return BRRS_M_IS_reportservice.BRRS_M_ISDetailExcel(filename, fromdate, todate, currency, dtltype, type,
 					version);
 
+		}
+		else if ("M_CALOCDetail".equals(filename)) {
+		    return BRRS_M_CALOC_reportService.getBRRSM_CALOCDetailExcel(filename, fromdate, todate, currency, dtltype, type, version);
 		}
 		else {
 			System.out.println("Default");
@@ -295,6 +327,7 @@ public class RegulatoryReportServices {
 		else if ("BRF_052_Archive_Detail".equals(filename)) {
 		    fileData = BRF_052_reportservice.BRF_052_ArchiveDetailExcel(todate);
 		}
+
 		else if ("DBIS10_FINCON_1ADetail".equals(filename)) {
 
 			fileData = BG_Fincon_1A.getFincon_1A_DetailExcel(filename, fromdate, todate, currency, dtltype,
@@ -311,6 +344,11 @@ public class RegulatoryReportServices {
 
 			fileData = BG_Fincon_1C.getFincon_1C_DetailExcel(filename, fromdate, todate, currency, dtltype,
 					type, version);
+		}
+
+
+		else if ("M_CALOCDetail".equals(filename)) {
+		    fileData = BRRS_M_CALOC_reportService.getBRRSM_CALOCDetailExcel(filename, fromdate, todate, currency, dtltype, type, version);
 		}
 
 		if (fileData == null) {
@@ -366,6 +404,23 @@ public class RegulatoryReportServices {
                     return new byte[0];
                 }
                 break;
+            
+                
+            case "M_CALOC":
+                try {
+                    excelBytes = BRRS_M_CALOC_reportService.getBRRS_M_CALOCExcel(filename, reportId, fromdate, todate,
+                            currency, dtltype, null, "excel", null);
+                    if (excelBytes != null && excelBytes.length > 0) {
+                        List<int[]> tableRanges = Arrays.asList(new int[]{0, 120});
+                        pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes, tableRanges, false);
+                        return pdfBytes;
+                    }
+                    return new byte[0];
+                } catch (Exception e) {
+                    logger.error("getPdfDownloadFile: M_CALOC PDF generation failed", e);
+                    return new byte[0];
+                }
+               
             default:
                 logger.warn("Unknown reportId for PDF generation: {}", reportId);
                 return new byte[0];
@@ -388,9 +443,13 @@ public class RegulatoryReportServices {
                     }
 
                     logger.info("BRF_052 Excel generated successfully → size={} bytes", excelBytes.length);
+                    List<int[]> tableRanges = Arrays.asList(
+                            new int[]{0,  97}
+                            
+                    );
 
                     // Step 2: Convert Excel → PDF
-                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes);
+                    pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes,tableRanges, false);
 
                     if (pdfBytes == null || pdfBytes.length == 0) {
                         logger.error("BRF_052 PDF conversion returned empty bytes");

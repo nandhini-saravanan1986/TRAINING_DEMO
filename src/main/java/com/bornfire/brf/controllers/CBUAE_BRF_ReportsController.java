@@ -40,6 +40,7 @@ import org.springframework.web.servlet.ModelAndView;
 import com.bornfire.brf.entities.M_IS_Summary_Entity1;
 import com.bornfire.brf.entities.M_IS_Summary_Entity2;
 import com.bornfire.brf.services.BRF_67_ReportService;
+import com.bornfire.brf.services.BRRS_M_CALOC_ReportService;
 import com.bornfire.brf.services.BRRS_M_IS_ReportService;
 import com.bornfire.brf.services.RegulatoryReportServices;
 import com.bornfire.brf.services.BRF_008_A_ReportService;
@@ -64,6 +65,9 @@ public class CBUAE_BRF_ReportsController {
 		private String pagesize;
 		@Autowired
 	    BRF_052_ReportService BRF_052_reportservice;
+		
+		@Autowired
+		BRRS_M_CALOC_ReportService BRRS_M_CALOC_reportService;
 	
 		public String getPagesize() {
 			return pagesize;
@@ -893,6 +897,98 @@ public class CBUAE_BRF_ReportsController {
 			        //RT_SLSServices.generateReportAsync(jobId, filename, reportdate, currency,version);
 			        return jobId;
 			    }
+			// ─────────────────────────────────────────────────────────────────────
+			// M_CALOC DETAIL EDIT — load view/edit page for a single detail record
+			// URL: GET /Reports/M_CALOC/Detailspage?formmode=...&acctNo=...&asondate=...
+			// ─────────────────────────────────────────────────────────────────────
+			@RequestMapping(value = "{reportid}/Detailspage", method = RequestMethod.GET)
+			public ModelAndView getDetailEditPage(
+			        @PathVariable("reportid") String reportid,
+			        @RequestParam("acctNo")   String acctNo,
+			        @RequestParam("formmode") String formmode) {
+
+			    switch (reportid) {
+			        case "M_CALOC":
+			            return BRRS_M_CALOC_reportService.getViewOrEditPage(acctNo, formmode);
+			        default:
+			            logger.warn("Detailspage: no handler for reportid={}", reportid);
+			            return new ModelAndView("error");
+			    }
+			}
+
+			// ─────────────────────────────────────────────────────────────────────
+			// M_CALOC DETAIL UPDATE — save edited detail record
+			// URL: POST /Reports/M_CALOC/update
+			// ─────────────────────────────────────────────────────────────────────
+			@RequestMapping(value = "{reportid}/update", method = RequestMethod.POST)
+			@ResponseBody
+			public ResponseEntity<?> updateDetailRecord(
+			        @PathVariable("reportid") String reportid,
+			        HttpServletRequest request) {
+
+			    switch (reportid) {
+			        case "M_CALOC":
+			            return BRRS_M_CALOC_reportService.updateDetailEdit(request);
+			        default:
+			            logger.warn("update: no handler for reportid={}", reportid);
+			            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+			                    .body("No handler for reportid: " + reportid);
+			    }
+			}
+			// ─────────────────────────────────────────────────────────────────────
+			// M_CALOC SUMMARY PDF DOWNLOAD
+			// URL: GET /Reports/M_CALOC/downloadSummaryPdf?fromdate=...&todate=...
+			// ─────────────────────────────────────────────────────────────────────
+			@RequestMapping(value = "M_CALOC/downloadSummaryPdf", method = RequestMethod.GET)
+			public void downloadM_CALOCSummaryPdf(
+			        HttpServletResponse response,
+			        @RequestParam("todate")   String todate,
+			        @RequestParam("fromdate") String fromdate) {
+
+			    logger.info("M_CALOC downloadSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+			    try {
+			        try {
+			            fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+			            todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+			        } catch (ParseException e) {
+			            logger.info("M_CALOC downloadSummaryPdf: dates already converted, keeping as-is: {}", todate);
+			        }
+
+			        byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+			                "M_CALOC",          // reportId — matches switch-case in RegulatoryReportServices
+			                "M_CALOC.xlsx",     // template filename
+			                null,               // asondate
+			                fromdate,
+			                todate,
+			                null,               // currency
+			                null,               // subreportid
+			                null,               // secid
+			                null,               // dtltype
+			                null,               // reportingTime
+			                null,               // instancecode
+			                null                // filter
+			        );
+
+			        if (pdfBytes == null || pdfBytes.length == 0) {
+			            logger.warn("M_CALOC downloadSummaryPdf: PDF generation returned empty");
+			            response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+			            return;
+			        }
+
+			        response.setContentType("application/pdf");
+			        response.setHeader("Content-Disposition", "attachment; filename=\"M_CALOC.pdf\"");
+			        response.setContentLength(pdfBytes.length);
+
+			        try (ServletOutputStream out = response.getOutputStream()) {
+			            out.write(pdfBytes);
+			            out.flush();
+			        }
+
+			    } catch (Exception e) {
+			        logger.error("M_CALOC downloadSummaryPdf ERROR", e);
+			        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			    }
+			}
 			  
 				
 				
