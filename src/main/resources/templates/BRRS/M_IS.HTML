@@ -504,6 +504,21 @@ PURPOSE		: BWRBRREPORT
 				}
 			});
 		}
+		/* ── Download email summary as PDF (EMAILM_IS template) ─────── */
+		function downloadEmailSummaryPdf(element) {
+		    var fromdate = element.getAttribute('data-fromdate');
+		    var todate   = element.getAttribute('data-todate');
+
+		    $('#loader').modal('show');
+
+		    var url = '/BCDRS/Reports/M_IS/downloadEmailSummaryPdf'
+		            + '?fromdate=' + encodeURIComponent(fromdate)
+		            + '&todate='   + encodeURIComponent(todate);
+
+		    window.location.href = url;
+
+		    setTimeout(function() { $('#loader').modal('hide'); }, 2000);
+		}
 		/* ── Download summary as PDF ─────────────────────────────── */
 		function downloadSummaryPdf(element) {
 		    var fromdate = element.getAttribute('data-fromdate');
@@ -1185,22 +1200,12 @@ function downloadDetailfile(jobId,filename) {
 					    			 data-version=${version}" onclick="downloadfile(this);">
 							<i class="fa fa-download"></i>FORMAT
 						</button>
-						<button type="button" class="custom-tab-btn "
-							id="custom-tab-btnAdd" onclick="downloadfile(this)"
-							th:if="${displaymode == 'summary' or displaymode == 'resubSummary'}"
-							th:attr="data-reportid=${reportid},
-            data-asondate=${asondate},
-            data-fromdate=${fromdate},
-            data-todate=${todate},
-            data-currency=${currency}, 
-            data-dtltype=${dtltype},
-            data-filename='EMAILM_IS.xlsx',
-             data-type=${type},
-            data-format='email',
-            data-version=${version != null ? version : ''}"
-							style="font-family: Arial; font-weight: bold;">
-							<i class="fa fa-download"></i> Email
-
+						<button type="button" class="custom-tab-btn"
+						    th:if="${displaymode == 'summary' or displaymode == 'resubSummary'}"
+						    th:attr="data-fromdate=${fromdate}, data-todate=${todate}"
+						    onclick="downloadEmailSummaryPdf(this)"
+						    style="font-family: Arial; font-weight: bold;">
+						    <i class="fa fa-envelope text-danger"></i> Email
 						</button>
 						<button type="button" class="custom-tab-btn"
 						    th:if="${displaymode == 'summary' or displaymode == 'resubSummary'}"

@@ -350,7 +350,11 @@ public class BRRS_M_CALOC_ReportService {
 				populateEntity3Data(sheet, dataList3.get(0), textStyle, numberStyle);
 			}
 
-			workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+			try {
+			    workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+			} catch (Exception e) {
+			    logger.warn("Formula evaluation skipped — external workbook reference could not be resolved: {}", e.getMessage());
+			}
 			workbook.write(out);
 
 			logger.info("Excel generated successfully. Size: {} bytes", out.size());

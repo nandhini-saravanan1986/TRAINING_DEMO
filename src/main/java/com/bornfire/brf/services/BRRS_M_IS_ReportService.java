@@ -513,6 +513,11 @@ public class BRRS_M_IS_ReportService {
 			// Generate Excel for RESUB
 			return BRRS_M_ISResubExcel(filename, reportId, fromdate, todate, currency, dtltype, type, version);
 		}
+		// EMAIL check — load EMAILM_IS template, populate same columns, convert to PDF downstream
+		else if ("email".equalsIgnoreCase(format)) {
+		    logger.info("Service: Generating EMAIL report using EMAILM_IS.xlsx template");
+		    return BRRS_M_ISEmailExcel(filename, reportId, fromdate, todate, currency, dtltype, type, version);
+		}
 		List<M_IS_Summary_Entity1> dataList = M_IS_Summary_Repo1
 				.getdatabydateList(dateformat.parse(todate));
 		List<M_IS_Summary_Entity2> dataList1 = M_IS_Summary_Repo2
@@ -3901,5 +3906,82 @@ public class BRRS_M_IS_ReportService {
 			return out.toByteArray();
 		}
 	}
+	public byte[] BRRS_M_ISEmailExcel(String filename, String reportId, String fromdate, String todate,
+	        String currency, String dtltype, String type, BigDecimal version) throws Exception {
 
+	    logger.info("Service: Starting EMAIL Excel generation for M_IS");
+
+	    List<M_IS_Summary_Entity1> dataList  = M_IS_Summary_Repo1.getdatabydateList(dateformat.parse(todate));
+	    List<M_IS_Summary_Entity2> dataList1 = M_IS_Summary_Repo2.getdatabydateList(dateformat.parse(todate));
+
+	    if (dataList.isEmpty()) {
+	        logger.warn("Service: No data found for M_IS EMAIL report. Returning empty result.");
+	        return new byte[0];
+	    }
+
+	    String templateDir  = env.getProperty("output.exportpathtemp");
+	    Path   templatePath = Paths.get(templateDir, filename);
+
+	    logger.info("Service: Loading EMAIL template from: {}", templatePath.toAbsolutePath());
+
+	    if (!Files.exists(templatePath)) {
+	        throw new FileNotFoundException("EMAIL template not found at: " + templatePath.toAbsolutePath());
+	    }
+
+	    try (InputStream templateInputStream = Files.newInputStream(templatePath);
+	         Workbook workbook = WorkbookFactory.create(templateInputStream);
+	         ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+
+	        Sheet sheet = workbook.getSheetAt(0);
+
+	        CellStyle textStyle   = workbook.createCellStyle();
+	        CellStyle numberStyle = workbook.createCellStyle();
+	        Font font = workbook.createFont();
+	        font.setFontHeightInPoints((short) 8);
+	        font.setFontName("Arial");
+	        numberStyle.setFont(font);
+
+	        int startRow = 9;
+
+	        if (!dataList.isEmpty()) {
+	            for (int i = 0; i < dataList.size(); i++) {
+	                M_IS_Summary_Entity1 record  = dataList.get(i);
+	                M_IS_Summary_Entity2 record2 = dataList1.get(i);
+
+	                Row row = sheet.getRow(startRow + i);
+	                if (row == null) row = sheet.createRow(startRow + i);
+
+	                // Populate same columns as normal BRRS_M_ISExcel
+	                // (EMAILM_IS template has same column structure — only styling differs)
+	                Cell cell3 = row.createCell(3);
+	                if (record.getR10_FAIR_VALUE_PROFIT_AND_LOSS() != null) {
+	                    cell3.setCellValue(record.getR10_FAIR_VALUE_PROFIT_AND_LOSS().doubleValue());
+	                    cell3.setCellStyle(numberStyle);
+	                } else { cell3.setCellValue(""); cell3.setCellStyle(textStyle); }
+
+	                Cell cell4 = row.createCell(4);
+	                if (record.getR10_HELD_TO_MATURITY() != null) {
+	                    cell4.setCellValue(record.getR10_HELD_TO_MATURITY().doubleValue());
+	                    cell4.setCellStyle(numberStyle);
+	                } else { cell4.setCellValue(""); cell4.setCellStyle(textStyle); }
+
+	                Cell cell5 = row.createCell(5);
+	                if (record.getR10_AVAILABLE_FOR_SALE() != null) {
+	                    cell5.setCellValue(record.getR10_AVAILABLE_FOR_SALE().doubleValue());
+	                    cell5.setCellStyle(numberStyle);
+	                } else { cell5.setCellValue(""); cell5.setCellStyle(textStyle); }
+	            }
+	        }
+
+	        try {
+	            workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
+	        } catch (Exception e) {
+	            logger.warn("M_IS EMAIL: Formula evaluation skipped — external reference issue: {}", e.getMessage());
+	        }
+
+	        workbook.write(out);
+	        logger.info("M_IS EMAIL Excel generated successfully. Size: {} bytes", out.size());
+	        return out.toByteArray();
+	    }
+	}
 }

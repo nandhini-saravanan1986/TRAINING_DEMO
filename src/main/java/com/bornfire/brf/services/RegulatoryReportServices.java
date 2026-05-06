@@ -408,8 +408,15 @@ public class RegulatoryReportServices {
                 
             case "M_CALOC":
                 try {
-                    excelBytes = BRRS_M_CALOC_reportService.getBRRS_M_CALOCExcel(filename, reportId, fromdate, todate,
-                            currency, dtltype, null, "excel", null);
+                    if ("EMAIL_M_CALOC.xlsx".equals(filename)) {
+                        excelBytes = BRRS_M_CALOC_reportService.getBRRS_M_CALOCExcel(
+                                filename, reportId, fromdate, todate,
+                                currency, dtltype, null, "email", null);
+                    } else {
+                        excelBytes = BRRS_M_CALOC_reportService.getBRRS_M_CALOCExcel(
+                                filename, reportId, fromdate, todate,
+                                currency, dtltype, null, "excel", null);
+                    }
                     if (excelBytes != null && excelBytes.length > 0) {
                         List<int[]> tableRanges = Arrays.asList(new int[]{0, 120});
                         pdfBytes = exceltopdfservice.convertExcelBytesToPdf(excelBytes, tableRanges, false);
@@ -466,18 +473,31 @@ public class RegulatoryReportServices {
                 
             case "M_IS":
                 try {
-                    // Step 1: Generate filled Excel from M_IS.xlsx template
-                    excelBytes = BRRS_M_IS_reportservice.BRRS_M_ISExcel(
-                            "M_IS.xlsx",
-                            reportId,
-                            fromdate,
-                            todate,
-                            currency,
-                            dtltype,
-                            null,      // type = null  → normal live-data path inside BRRS_M_ISExcel
-                            "excel",   // format
-                            null       // version = null → non-archival
-                    );
+                    if ("EMAILM_IS.xlsx".equals(filename)) {
+                        excelBytes = BRRS_M_IS_reportservice.BRRS_M_ISExcel(
+                                "EMAILM_IS.xlsx",
+                                reportId,
+                                fromdate,
+                                todate,
+                                currency,
+                                dtltype,
+                                null,      // type
+                                "email",   // format → triggers email path in service
+                                null       // version
+                        );
+                    } else {
+                        excelBytes = BRRS_M_IS_reportservice.BRRS_M_ISExcel(
+                                "M_IS.xlsx",
+                                reportId,
+                                fromdate,
+                                todate,
+                                currency,
+                                dtltype,
+                                null,      // type = null → normal live-data path
+                                "excel",   // format
+                                null       // version
+                        );
+                    }
 
                     if (excelBytes == null || excelBytes.length == 0) {
                         logger.warn("M_IS: No Excel data found for PDF generation → todate={}", todate);
@@ -486,12 +506,6 @@ public class RegulatoryReportServices {
 
                     logger.info("M_IS: Excel generated → {} bytes", excelBytes.length);
 
-                    // Step 2: Convert using table-range-aware overload.
-                    // Two tables share one sheet — each range gets its own maxCol
-                    // so Table 1 (cols A–G) is not padded with Table 2's extra columns (H–I).
-                    //
-                    // POI rows 0–15  → bank/report header rows + Table 1 (5A Income on Investments)
-                    // POI rows 16–37 → Table 2 (5B Investment Securities) + footnote row
                     List<int[]> tableRanges = Arrays.asList(
                             new int[]{0,  15},
                             new int[]{16, 37}

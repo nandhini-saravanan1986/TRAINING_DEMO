@@ -989,7 +989,115 @@ public class CBUAE_BRF_ReportsController {
 			        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			    }
 			}
-			  
+			// ─────────────────────────────────────────────────────────────────────
+	        // M_CALOC EMAIL SUMMARY PDF DOWNLOAD
+	        // URL: GET /Reports/M_CALOC/downloadEmailSummaryPdf?fromdate=...&todate=...
+	        // ─────────────────────────────────────────────────────────────────────
+	        @RequestMapping(value = "M_CALOC/downloadEmailSummaryPdf", method = RequestMethod.GET)
+	        public void downloadM_CALOCEmailSummaryPdf(
+	                HttpServletResponse response,
+	                @RequestParam("todate")   String todate,
+	                @RequestParam("fromdate") String fromdate) {
+
+	            logger.info("M_CALOC downloadEmailSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+	            try {
+	                try {
+	                    fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+	                    todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+	                } catch (ParseException e) {
+	                    logger.info("M_CALOC downloadEmailSummaryPdf: dates already converted, keeping as-is: {}", todate);
+	                }
+
+	                byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+	                        "M_CALOC",              // reportId — matches switch-case in RegulatoryReportServices
+	                        "EMAIL_M_CALOC.xlsx",   // email template filename
+	                        null,                   // asondate
+	                        fromdate,
+	                        todate,
+	                        null,                   // currency
+	                        null,                   // subreportid
+	                        null,                   // secid
+	                        null,                   // dtltype
+	                        null,                   // reportingTime
+	                        null,                   // instancecode
+	                        null                    // filter
+	                );
+
+	                if (pdfBytes == null || pdfBytes.length == 0) {
+	                    logger.warn("M_CALOC downloadEmailSummaryPdf: PDF generation returned empty");
+	                    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+	                    return;
+	                }
+
+	                response.setContentType("application/pdf");
+	                response.setHeader("Content-Disposition", "attachment; filename=\"EMAIL_M_CALOC.pdf\"");
+	                response.setContentLength(pdfBytes.length);
+
+	                try (ServletOutputStream out = response.getOutputStream()) {
+	                    out.write(pdfBytes);
+	                    out.flush();
+	                }
+
+	            } catch (Exception e) {
+	                logger.error("M_CALOC downloadEmailSummaryPdf ERROR", e);
+	                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	            }
+	        }
+	     // ─────────────────────────────────────────────────────────────────────
+	        // M_IS EMAIL SUMMARY PDF DOWNLOAD
+	        // URL: GET /Reports/M_IS/downloadEmailSummaryPdf?fromdate=...&todate=...
+	        // ─────────────────────────────────────────────────────────────────────
+	        @RequestMapping(value = "M_IS/downloadEmailSummaryPdf", method = RequestMethod.GET)
+	        public void downloadM_ISEmailSummaryPdf(
+	                HttpServletResponse response,
+	                @RequestParam("todate")   String todate,
+	                @RequestParam("fromdate") String fromdate) {
+
+	            logger.info("M_IS downloadEmailSummaryPdf called — todate={} fromdate={}", todate, fromdate);
+
+	            try {
+	                try {
+	                    fromdate = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(fromdate));
+	                    todate   = dateFormat.format(new SimpleDateFormat("dd/MM/yyyy").parse(todate));
+	                } catch (ParseException e) {
+	                    logger.info("M_IS downloadEmailSummaryPdf: dates already in correct format, keeping as-is: {}", todate);
+	                }
+
+	                byte[] pdfBytes = regreportServices.getPdfDownloadFile(
+	                        "M_IS",           // reportId — matches case "M_IS" in getPdfDownloadFile
+	                        "EMAILM_IS.xlsx", // email template filename
+	                        null,             // asondate
+	                        fromdate,
+	                        todate,
+	                        "AED",            // currency
+	                        null,             // subreportid
+	                        null,             // secid
+	                        null,             // dtltype
+	                        null,             // reportingTime
+	                        null,             // instancecode
+	                        null              // filter
+	                );
+
+	                if (pdfBytes == null || pdfBytes.length == 0) {
+	                    logger.warn("M_IS downloadEmailSummaryPdf: no data / PDF generation returned empty");
+	                    response.setStatus(HttpServletResponse.SC_NO_CONTENT);
+	                    return;
+	                }
+
+	                response.setContentType("application/pdf");
+	                response.setHeader("Content-Disposition", "attachment; filename=\"EMAILM_IS.pdf\"");
+	                response.setContentLength(pdfBytes.length);
+
+	                try (ServletOutputStream out = response.getOutputStream()) {
+	                    out.write(pdfBytes);
+	                    out.flush();
+	                }
+
+	            } catch (Exception e) {
+	                logger.error("M_IS downloadEmailSummaryPdf ERROR", e);
+	                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	            }
+	        }
 				
 				
 				
